@@ -318,6 +318,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .tabs .selected::after { width: 26px; left: calc(50% - 13px); border-radius: 2px; }
 .calendar .selected { background: var(--blue); }
 .pill, .pill.mood { background: #edf5ff; color: #5e87b7; border-radius: 4px; }
+.pill.mood { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
+.pill.mood .tone-icon { width: 16px; height: 16px; flex-shrink: 0; filter: none; }
 dialog { color: var(--ink); border-radius: 15px 15px 0 0; box-shadow: 0 -10px 50px #07253c16; }
 dialog::backdrop { background: #001c3b70; backdrop-filter: blur(3px); }
 #sheet-head { background: #fff; border-color: #edf3fa; }
