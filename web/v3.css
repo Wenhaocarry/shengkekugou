@@ -357,7 +357,8 @@ dialog[data-kind=journal] #sheet-body, dialog[data-kind=compose] #sheet-body { b
 .compose-song b { color: #334c68; }
 .compose-song small { color: #9aa8b8; }
 .compose-song .change-song { color: #508fcf; }
-.paper-editor textarea { font-family: inherit; color: #2f435a; font-size: 15px; line-height: 1.9; }
+.paper-editor .note-box { min-height: 0; padding-bottom: 16px; }
+.paper-editor textarea { font-family: inherit; color: #2f435a; font-size: 15px; line-height: 1.9; min-height: 1.9em; resize: none; overflow-y: hidden; }
 .paper-editor textarea::placeholder { font-size: 14px; color: #b0bac8; }
 .paper-editor .word-count { color: #a3b0c1; }
 .compose-tools button { background: white; border: 1px solid #e2ecf9; box-shadow: none; border-radius: 8px; color: #6f8aa9; }
