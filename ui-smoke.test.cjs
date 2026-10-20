@@ -154,6 +154,7 @@ async function main() {
     await click('compose');
     const note = 'V3 自动验证：让音乐记住这一刻';
     await page.locator('#note').fill(note);
+    assert.equal(await page.locator('#note').evaluate(el=>getComputedStyle(el).outlineStyle),'none','editor has a focus frame');
     await click('pick-mood');
     await click('expand');
     assert(await page.locator('.picker-grid > button').count() >= 33);
@@ -252,7 +253,44 @@ async function main() {
     assert.equal(saved.note, note + '（已编辑）');
     assert.equal(saved.photo_urls.length, 3, 'editing lost photos');
     await click('close');
+    await page.goto(base+'/#memories');
+    await click('review','timeline');
+    const reviewRecords=(await state()).memories;
+    assert.equal(await page.locator('.song-timeline').count(),new Set(reviewRecords.map(m=>m.song_id)).size,'a song appeared in multiple timeline groups');
+    assert.equal(await page.locator('.timeline-row').count(),reviewRecords.length,'grouping lost records');
+    const groups=await page.locator('.song-timeline').evaluateAll(elements=>elements.map(el=>({songID:el.dataset.songId,ids:[...el.querySelectorAll('.timeline-row')].map(row=>row.dataset.memoryId)})));
+    for(const group of groups){
+      const records=reviewRecords.filter(m=>m.song_id===group.songID).sort((a,b)=>(b.date+(b.record_time||'12:00')+b.created_at).localeCompare(a.date+(a.record_time||'12:00')+a.created_at));
+      assert.deepEqual(group.ids,records.map(m=>m.id),'song records are not in chronological order');
+    }
+    await snapshot('song-timeline');
+    await click('memory-filter','photos');
+    const withPhotos=reviewRecords.filter(m=>(m.photo_urls?.length||m.photo_url));
+    assert.equal(await page.locator('.timeline-row').count(),withPhotos.length,'photo filter includes text-only records');
+    await click('detail',saved.id);
+    await click('detail-back');
+    assert.equal(await page.locator('[data-act="review"][data-id="timeline"].selected').count(),1,'detail return changed view');
+    assert.equal(await page.locator('[data-act="memory-filter"][data-id="photos"][aria-pressed="true"]').count(),1,'detail return lost filter');
+    await click('full-history',saved.song_id);
+    assert.equal(await page.locator('.history-page .memory-card').count(),withPhotos.filter(m=>m.song_id===saved.song_id).length);
+    await click('history-back');
+    await click('review','calendar');
+    const selectedDay=await page.locator('.calendar .selected').getAttribute('data-id');
+    assert.equal(await page.locator('.day-entry').count(),withPhotos.filter(m=>m.date===selectedDay).length,'calendar ignored photo filter');
+    await click('review','album');
+    assert.equal(await page.locator('.album-item').count(),reviewRecords.reduce((n,m)=>n+(m.photo_urls?.length||(m.photo_url?1:0)),0),'global album omitted photos');
+    await page.locator(`[data-act="photo-view"][data-id="${saved.id}|0"]`).click();
+    await click('photo-memory',saved.id);
+    assert.equal(await page.locator('#memory-'+saved.id+'.memory-focus').count(),1,'photo did not lead to its song record');
+    await click('history-back');
+    assert.equal(await page.locator('[data-act="review"][data-id="album"].selected').count(),1,'photo return lost global album');
+    await page.goto(base+'/#player');
+    await page.locator('.player').waitFor();
     await click('entry');
+    await click('memory-filter','all');
+    assert.equal(await page.locator('dialog .memory-card').count(),reviewRecords.filter(m=>m.song_id===saved.song_id).length,'journal did not clear photo filter');
+    await click('memory-filter','photos');
+    assert.equal(await page.locator('dialog .memory-card').count(),withPhotos.filter(m=>m.song_id===saved.song_id).length,'journal ignored photo filter');
     await click('detail', saved.id);
     await click('delete-confirm', saved.id);
     await click('delete', saved.id);
@@ -260,6 +298,11 @@ async function main() {
     assert.equal((await state()).memories.length, initial.memories.length, 'delete failed');
     await snapshot('memories');
     await click('review', 'timeline');
+    if(!initial.memories.some(m=>m.photo_urls?.length||m.photo_url)){
+      assert.equal(await page.locator('.timeline-row').count(),0,'deleted image record remained in filter');
+      assert.equal(await page.locator('.empty [data-act="memory-filter"][data-id="all"]').count(),1,'empty filter has no way back');
+    }
+    await click('memory-filter','all');
     assert(await page.locator('.timeline-group').count() > 0);
     await click('review', 'ring');
     assert(await page.locator('.ring').count() > 0);
@@ -275,10 +318,11 @@ async function main() {
     }
     for (const width of [360, 430]) {
       await page.setViewportSize({ width, height: 844 });
-      for (const view of ['home', 'mine', 'player']) {
+      for (const view of ['home', 'mine', 'player', 'memories']) {
         await page.goto(base + '/#' + view);
         await page.locator('section').first().waitFor();
         await layout();
+        if(view==='memories')for(const tab of ['calendar','timeline','album','ring']){await click('review',tab);await layout();}
         if(view==='mine'){
           await click('queue');
           await layout();
@@ -289,7 +333,7 @@ async function main() {
       }
     }
     assert.deepEqual(errors, []);
-    console.log('PASS: 360/390/430px layouts, inert navigation tabs, queue playback/history/likes/removal/bulk edit, fixed playlist, playback/seek/lyrics, three photos, create/edit/delete, sharing and memory views.');
+    console.log('PASS: 360/390/430px layouts, inert navigation tabs, queue playback/history/likes/removal/bulk edit, fixed playlist, playback/seek/lyrics, three photos, create/edit/delete, sharing, song timelines, photo filters, global album and return navigation.');
   } catch(error) {
     if(page){
       console.log('Browser failure:',await page.evaluate(()=>({url:location.href,form:document.querySelector('#form-error')?.textContent,upload:document.querySelector('#upload-error')?.textContent,toast:document.querySelector('#toast')?.textContent})).catch(()=>null));

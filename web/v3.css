@@ -316,6 +316,31 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .tabs button { background: #f3f7fe; color: #8394a9; font-size: 13px; }
 .tabs .selected { color: #087dff; }
 .tabs .selected::after { width: 26px; left: calc(50% - 13px); border-radius: 2px; }
+.record-filters { display: flex; align-items: center; gap: 8px; padding: 2px 0 14px; }
+.record-filters button { min-height: 40px; padding: 0 14px; border-radius: 20px; background: #f3f6fa; color: #7b8ca2; font-size: 12px; }
+.record-filters [aria-pressed=true] { background: #eaf3ff; color: #087dff; font-weight: 550; }
+.record-filters button span { margin-left: 5px; font-size: 10px; opacity: .7; }
+.record-filters > small { margin-left: auto; color: #8a9bb1; font-size: 10px; }
+.empty .secondary { display: block; min-height: 42px; margin: 14px auto 0; padding: 0 18px; }
+.song-timeline { padding: 2px 0 14px; border-bottom: 1px solid #eaf0f7; margin-bottom: 18px; }
+.timeline-song { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 0 18px; }
+.timeline-song .song-inline { flex: 1; min-width: 0; }
+.timeline-song .thumb { width: 44px; height: 44px; border-radius: 7px; }
+.timeline-song .song-inline b { font-size: 15px; }
+.timeline-song > span { display: flex; align-items: center; gap: 5px; color: #8a9bb1; font-size: 11px; white-space: nowrap; }
+.timeline-song > span svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.song-timeline .timeline-row { margin: 0 0 0 1px; gap: 13px; padding-bottom: 20px; }
+.song-timeline .timeline-row:last-child { padding-bottom: 4px; }
+.song-timeline .clock-col { width: 52px; padding: 3px 8px 0 0; text-align: right; }
+.song-timeline .clock-col small { display: block; margin-top: 4px; color: #94a3b7; font-size: 9px; }
+.timeline-entry-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 25px; }
+.timeline-entry-head .icon { height: 30px; width: 30px; margin-top: -5px; color: #8fa2b9; }
+.timeline-read { display: block; width: 100%; padding: 0; text-align: left; }
+.song-timeline .timeline-row p { margin: 3px 0 8px; color: #43566e; font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.song-timeline .photos img { width: min(80px, calc((100% - 12px)/3)); height: 80px; }
+.timeline-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.timeline-tags .pill { font-size: 10px; }
+.memory-body > .album-grid { padding-top: 4px; }
 .calendar .selected { background: var(--blue); }
 .pill, .pill.mood { background: #edf5ff; color: #5e87b7; border-radius: 4px; }
 .pill.mood { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
@@ -361,6 +386,8 @@ dialog[data-kind=journal] #sheet-body, dialog[data-kind=compose] #sheet-body { b
 .compose-song .change-song { color: #508fcf; }
 .paper-editor .note-box { min-height: 0; padding-bottom: 16px; }
 .paper-editor textarea { font-family: inherit; color: #2f435a; font-size: 15px; line-height: 1.9; min-height: 1.9em; resize: none; overflow-y: hidden; }
+.paper-editor textarea:focus-visible { outline: none; box-shadow: none; }
+.paper-editor:focus-within .word-count { color: #508fcf; }
 .paper-editor textarea::placeholder { font-size: 14px; color: #b0bac8; }
 .paper-editor .word-count { color: #a3b0c1; }
 .compose-tools button { background: white; border: 1px solid #e2ecf9; box-shadow: none; border-radius: 8px; color: #6f8aa9; }
