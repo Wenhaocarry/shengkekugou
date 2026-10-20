@@ -3,27 +3,39 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { spawn } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const { chromium } = require('playwright');
 
 async function main() {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'shengke-v3-ui-'));
   const previews = path.join(__dirname, 'docs/previews');
   fs.mkdirSync(previews, { recursive: true });
-  fs.copyFileSync(path.join(__dirname, 'data/state.json'), path.join(temp, 'state.json'));
-  fs.cpSync(path.join(__dirname, 'data/media'), path.join(temp, 'media'), { recursive: true });
-  const server = spawn(path.join(__dirname, 'bin/shengke'), ['-addr', '127.0.0.1:18100', '-data', temp]);
+  const browserMode = process.argv.includes('--browser');
+  if (!browserMode) {
+    fs.copyFileSync(path.join(__dirname, 'data/state.json'), path.join(temp, 'state.json'));
+    fs.cpSync(path.join(__dirname, 'data/media'), path.join(temp, 'media'), { recursive: true });
+  }
+  const server = browserMode
+    ? spawn(process.execPath, [path.join(__dirname,'scripts/preview-demo.cjs'),'18100'])
+    : spawn(path.join(__dirname, 'bin/shengke'), ['-addr', '127.0.0.1:18100', '-data', temp]);
   const base = 'http://127.0.0.1:18100';
-  let browser;
+  let browser,page;
   try {
     let ready = false;
     for (let i = 0; i < 30; i++) {
-      try { if ((await fetch(base + '/api/state')).ok) { ready = true; break; } } catch {}
+      try { if ((await fetch(base + (browserMode ? '/' : '/api/state'))).ok) { ready = true; break; } } catch {}
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     assert(ready, 'isolated server did not start');
+    if(browserMode){
+      const partial=await fetch(base+'/media/sample-a.wav',{headers:{Range:'bytes=0-43'}});
+      assert.equal(partial.status,206);assert.equal((await partial.arrayBuffer()).byteLength,44);
+      assert.equal((await fetch(base+'/media/sample-a.wav',{headers:{Range:'bytes=999999999-'}})).status,416);
+      assert.equal((await fetch(base+'/%2e%2e%2fpackage.json')).status,404);
+    }
     browser = await chromium.launch({ headless: true, channel: 'chrome' });
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+    const context=await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+    page = await context.newPage();
     page.setDefaultTimeout(10000);
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -34,12 +46,11 @@ async function main() {
       await scope.locator(selector+':visible').first().click();
     };
     const snapshot = name => page.screenshot({ path: path.join(previews, name + '.png') });
-    const state = async () => (await page.request.get(base + '/api/state')).json();
+    const state = async () => browserMode ? page.evaluate(() => fetch('/api/state').then(r=>r.json())) : (await page.request.get(base + '/api/state')).json();
     const layout = async () => assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'horizontal page overflow');
-    const initial = await (await fetch(base + '/api/state')).json();
-
     await page.goto(base);
     await page.locator('.home').waitFor();
+    const initial = await state();
     await layout();
     assert.deepEqual((await page.locator('.app-tabs button').allTextContents()).map(s=>s.replace('K','').trim()), ['首页','直播','会员','福利','我的']);
     const homeURL=page.url();
@@ -175,6 +186,51 @@ async function main() {
     assert.equal(saved.record_time, '12:34');
     assert.equal(saved.visibility, 'friends');
     assert.equal(saved.location, '上海 · 窗边');
+    if (browserMode) {
+      const peer=await page.context().newPage();
+      await peer.goto(base+'/#settings');
+      await peer.locator('.setting-block').waitFor();
+      await peer.reload();
+      await peer.locator('.setting-block').waitFor();
+      const persisted=await peer.evaluate(async memoryID=>{
+        const state=await (await fetch('/api/state')).json();
+        const memory=state.memories.find(m=>m.id===memoryID);
+        return {note:memory.note,photos:await Promise.all(memory.photo_urls.map(async url=>(await (await fetch(url)).blob()).size))};
+      },saved.id);
+      assert.equal(persisted.note,note);
+      assert.deepEqual(persisted.photos,[png.length,png.length,png.length],'photos did not survive another tab and reload');
+      await peer.goto(base+'/#player');await peer.locator('.player').waitFor();
+      await peer.locator('[data-act="player-panel"][data-id="story"]').click();
+      await peer.locator('[data-act="player-album"]').click();
+      await peer.locator('.album-item').first().click();
+      await peer.waitForFunction(()=>document.querySelector('.photo-view-stage img')?.naturalWidth>0);
+      await peer.locator('[data-act="photo-memory"]').click();
+      assert.equal(await peer.locator('.memory-focus').count(),1);
+      await peer.goto(base+'/#settings');await peer.locator('.setting-block').waitFor();
+      const backupReady=peer.waitForEvent('download');
+      await peer.locator('a[href="/api/backup"]').click();
+      const archive=await backupReady,archivePath=path.join(temp,'browser-backup.zip');
+      await archive.saveAs(archivePath);
+      const check=spawnSync('python3',['-c','import json,sys,zipfile; z=zipfile.ZipFile(sys.argv[1]); assert z.testzip() is None; s=json.loads(z.read("state.json")); m=next(m for m in s["memories"] if m["id"]==sys.argv[2]); assert len(m["photo_urls"])==3; assert all(z.read(p.lstrip("/")) for p in m["photo_urls"]); assert len(s["songs"])==12; print("ZIP verified")',archivePath,saved.id],{encoding:'utf8'});
+      assert.equal(check.status,0,check.stderr);
+      const isolated=await browser.newContext({viewport:{width:390,height:844}});
+      const fresh=await isolated.newPage();await fresh.goto(base);await fresh.locator('.home').waitFor();
+      assert.equal(await fresh.evaluate(memoryID=>fetch('/api/state').then(r=>r.json()).then(s=>s.memories.some(m=>m.id===memoryID)),saved.id),false);
+      assert.equal(await fresh.evaluate(()=>fetch('/api/state').then(r=>r.json()).then(s=>s.memories.length)),initial.memories.length,'browser contexts shared records');
+      await isolated.close();
+      await peer.locator('[data-act="upload"]').click();
+      await peer.locator('#audio-file').setInputFiles(path.join(__dirname,'dist/media/sample-a.wav'));
+      await peer.locator('[name="title"]').fill('浏览器上传验证');
+      await peer.locator('#upload [type="submit"]').click();
+      await peer.locator('.player').waitFor();await peer.reload();await peer.locator('.player').waitFor();
+      await peer.waitForFunction(()=>document.querySelector('audio').readyState>0);
+      assert((await peer.locator('audio').getAttribute('src')).startsWith('blob:'),'uploaded audio did not survive reload');
+      await peer.locator('[data-act="toggle"]').click();await peer.waitForFunction(()=>!document.querySelector('audio').paused);
+      const uploaded=await peer.evaluate(()=>fetch('/api/state').then(r=>r.json()).then(s=>s.songs.find(song=>song.title==='浏览器上传验证')));
+      assert(uploaded);
+      await peer.evaluate(songID=>fetch('/api/songs/'+songID,{method:'DELETE'}),uploaded.id);
+      await peer.close();
+    }
     await click('share', saved.id);
     await page.locator('#live-share-image:not([hidden])').waitFor();
     assert.equal(await page.locator('#live-share-image').evaluate(el => el.naturalWidth), 720);
@@ -234,6 +290,12 @@ async function main() {
     }
     assert.deepEqual(errors, []);
     console.log('PASS: 360/390/430px layouts, inert navigation tabs, queue playback/history/likes/removal/bulk edit, fixed playlist, playback/seek/lyrics, three photos, create/edit/delete, sharing and memory views.');
+  } catch(error) {
+    if(page){
+      console.log('Browser failure:',await page.evaluate(()=>({url:location.href,form:document.querySelector('#form-error')?.textContent,upload:document.querySelector('#upload-error')?.textContent,toast:document.querySelector('#toast')?.textContent})).catch(()=>null));
+      await page.screenshot({path:path.join(previews,'failure.png')}).catch(()=>{});
+    }
+    throw error;
   } finally {
     if (browser) await browser.close();
     server.kill('SIGTERM');

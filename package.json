@@ -1,0 +1,9 @@
+{
+  "name": "shengke-kugou-demo",
+  "version": "3.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-demo.cjs",
+    "preview": "node scripts/preview-demo.cjs"
+  }
+}

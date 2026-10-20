@@ -1,10 +1,14 @@
 # 声刻计划 H5 · V3
 
-本仓库发布当前 V3 源码，`master` 为发布分支。本地记录、上传媒体、缓存与运行截图不进入 Git。首次克隆建议运行 `./start.sh -expand-playlist-demo` 生成完整示例歌单。线上部署及 Vercel 兼容性见 [部署说明](docs/部署说明.md)。
+本仓库发布当前 V3 源码，`master` 为发布分支，并支持 Vercel 浏览器演示版。本地记录、上传媒体、缓存与运行截图不进入 Git。首次克隆建议运行 `./start.sh -expand-playlist-demo` 生成完整示例歌单。线上部署及 Vercel 兼容性见 [部署说明](docs/部署说明.md)。
 
 以用户提供的六张酷狗音乐截图为依据，统一布局与 UI。V3 是独立版本，源代码、音频、照片与记录保存在 `shengke-v3/`。V1（`../shengke-v1/`）和 V2（`../shengke/`）保持原样。
 
-## 启动
+## Vercel 浏览器演示
+
+运行 `npm run build` 生成 `dist/`，或在 Vercel 导入本仓库，使用 `master`、Other 框架和仓库根目录。构建和输出目录已在 `vercel.json` 中配置，无需云数据库。记录、照片、上传歌曲保存于各自浏览器的 IndexedDB，不上传到服务器、不跨设备同步；清除站点数据会删除记录，可使用 JSON/ZIP 备份保存。
+
+## 本地 Go 版启动
 
 双击 `启动声刻.command`，或在本目录运行：
 
@@ -45,8 +49,12 @@ web/kugou.css / v2.css    沿用的基础组件与弹窗结构
 web/v2-icons.js          心情和场景图标
 web/bridge.js            宿主播放器适配边界
 main.go                  独立服务入口（8099）
-api.go / store.go         原有 API、校验与文件持久化
-ui-smoke.test.cjs         Chrome 端到端检查，自动使用独立临时数据
+api.go / store.go         本地 API、校验与文件持久化
+web/browser-demo.js      Vercel 演示版 IndexedDB 适配
+web/demo-zip.js          浏览器完整备份 ZIP
+scripts/build-demo.cjs   无依赖静态构建和合成音频生成
+vercel.json             静态构建配置与响应头
+ui-smoke.test.cjs         Chrome 端到端检查，--browser 验证静态演示版
 README.md / VERSION.md    本版说明
 ```
 

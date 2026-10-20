@@ -1,0 +1,563 @@
+{
+  "version": 1,
+  "songs": [
+    {
+      "id": "demo-a",
+      "title": "慢慢抵达",
+      "artist": "声刻 · 原创合成演示音",
+      "duration": 40,
+      "audio_url": "/media/sample-a.wav",
+      "cover_url": "",
+      "color": "#a6c8b8",
+      "lyrics": [
+        {
+          "time": 0,
+          "text": "出发之前，把心事收进口袋"
+        },
+        {
+          "time": 8,
+          "text": "城市的风，吹过陌生的站台"
+        },
+        {
+          "time": 16,
+          "text": "慢慢抵达，也慢慢找到自己"
+        },
+        {
+          "time": 24,
+          "text": "总有一盏灯，会为今天亮起"
+        },
+        {
+          "time": 32,
+          "text": "这一路，值得好好记住"
+        }
+      ],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "demo-b",
+      "title": "把今天留住",
+      "artist": "声刻 · 原创合成演示音",
+      "duration": 40,
+      "audio_url": "/media/sample-b.wav",
+      "cover_url": "",
+      "color": "#c9b7e2",
+      "lyrics": [
+        {
+          "time": 0,
+          "text": "给平凡的一天，留一束光"
+        },
+        {
+          "time": 8,
+          "text": "那些小事，都有回响"
+        },
+        {
+          "time": 16,
+          "text": "把今天留住，把温柔带走"
+        },
+        {
+          "time": 24,
+          "text": "不必赶路，也可以抬头"
+        },
+        {
+          "time": 32,
+          "text": "你也在好好生活"
+        }
+      ],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "demo-c",
+      "title": "日落之前",
+      "artist": "声刻 · 原创合成演示音",
+      "duration": 40,
+      "audio_url": "/media/sample-c.wav",
+      "cover_url": "",
+      "color": "#e7ba91",
+      "lyrics": [
+        {
+          "time": 0,
+          "text": "在日落之前，绕一段路"
+        },
+        {
+          "time": 8,
+          "text": "让晚风替我，轻轻停驻"
+        },
+        {
+          "time": 16,
+          "text": "风经过河边，也经过你"
+        },
+        {
+          "time": 24,
+          "text": "一首歌，一段记得的风景"
+        },
+        {
+          "time": 32,
+          "text": "明天见，今天的自己"
+        }
+      ],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-quiet",
+      "title": "静音恋人",
+      "artist": "礼越",
+      "duration": 40,
+      "audio_url": "/media/pdf-demo-quiet.wav",
+      "cover_url": "/cover-quiet.svg",
+      "color": "",
+      "lyrics": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-heal",
+      "title": "无感",
+      "artist": "江辰",
+      "duration": 40,
+      "audio_url": "/media/pdf-demo-heal.wav",
+      "cover_url": "/cover-heal.svg",
+      "color": "",
+      "lyrics": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-rain",
+      "title": "小模样",
+      "artist": "张小只ya",
+      "duration": 40,
+      "audio_url": "/media/pdf-demo-rain.wav",
+      "cover_url": "/cover-rain.svg",
+      "color": "",
+      "lyrics": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-heart",
+      "title": "情人",
+      "artist": "蔡徐坤",
+      "duration": 40,
+      "audio_url": "/media/pdf-demo-heart.wav",
+      "cover_url": "/cover-heart.svg",
+      "color": "",
+      "lyrics": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-repeat",
+      "title": "Melody Remix",
+      "artist": "锦零",
+      "duration": 40,
+      "audio_url": "/media/pdf-demo-repeat.wav",
+      "cover_url": "/cover-repeat.svg",
+      "color": "",
+      "lyrics": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-night",
+      "title": "完美降落",
+      "artist": "胡期皓 / 叶琼琳 / 董唧唧",
+      "duration": 40,
+      "audio_url": "/media/pdf-demo-night.wav",
+      "cover_url": "/cover-night.svg",
+      "color": "",
+      "lyrics": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-first",
+      "title": "trust me",
+      "artist": "慕乔",
+      "duration": 40,
+      "audio_url": "/media/pdf-demo-first.wav",
+      "cover_url": "/cover-first.svg",
+      "color": "",
+      "lyrics": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-alone",
+      "title": "Letting Go",
+      "artist": "蔡健雅",
+      "duration": 40,
+      "audio_url": "/media/pdf-demo-alone.wav",
+      "cover_url": "/cover-alone.svg",
+      "color": "",
+      "lyrics": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-summer",
+      "title": "我记得",
+      "artist": "赵雷",
+      "duration": 40,
+      "audio_url": "/media/pdf-demo-summer.wav",
+      "cover_url": "/cover-summer.svg",
+      "color": "",
+      "lyrics": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    }
+  ],
+  "memories": [
+    {
+      "id": "memory-a",
+      "song_id": "demo-a",
+      "position": 8,
+      "note": "第一次一个人来到这座城市，希望一切顺利。",
+      "mood": "出发",
+      "scenes": [
+        "通勤路上",
+        "一个人"
+      ],
+      "location": "深圳北站",
+      "visibility": "private",
+      "date": "2026-07-22",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "",
+      "chapter_id": "chapter-arrival",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "memory-b",
+      "song_id": "demo-b",
+      "position": 16,
+      "note": "终于准点下班，绕路去买了一束花。",
+      "mood": "小确幸",
+      "scenes": [
+        "下班后"
+      ],
+      "location": "花店门口",
+      "visibility": "private",
+      "date": "2026-08-16",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "",
+      "chapter_id": "chapter-small",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "memory-c",
+      "song_id": "demo-c",
+      "position": 24,
+      "note": "周末沿着河边散步，刚好看见晚霞。",
+      "mood": "松口气",
+      "scenes": [
+        "日落时分",
+        "散步中"
+      ],
+      "location": "河边步道",
+      "visibility": "private",
+      "date": "2026-09-10",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "",
+      "chapter_id": "chapter-small",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-quiet-memory-1",
+      "song_id": "pdf-demo-quiet",
+      "position": 8,
+      "note": "下班的地铁里听到这首歌，城市的噪声一下安静了。",
+      "mood": "平静下来",
+      "scenes": [
+        "通勤路上"
+      ],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-10-10",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "18:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-heal-memory-1",
+      "song_id": "pdf-demo-heal",
+      "position": 8,
+      "note": "绕着公园走了一圈，今天的疲惫慢慢散掉了。",
+      "mood": "被治愈了",
+      "scenes": [
+        "散步中"
+      ],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-10-01",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "18:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-rain-memory-1",
+      "song_id": "pdf-demo-rain",
+      "position": 8,
+      "note": "窗外又下雨了，想起曾经一起躲雨的那个屋檐。",
+      "mood": "突然想起TA",
+      "scenes": [
+        "下雨天"
+      ],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-09-22",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "18:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-heart-memory-1",
+      "song_id": "pdf-demo-heart",
+      "position": 8,
+      "note": "见面前在咖啡馆等了好久，连耳机里的旋律也像在心跳。",
+      "mood": "心动时刻",
+      "scenes": [
+        "咖啡馆"
+      ],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-09-13",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "18:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-repeat-memory-1",
+      "song_id": "pdf-demo-repeat",
+      "position": 8,
+      "note": "又在回家的路上听到这首熟悉的旋律，留下一次记录。",
+      "mood": "",
+      "scenes": [],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-09-04",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "18:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-repeat-memory-2",
+      "song_id": "pdf-demo-repeat",
+      "position": 11,
+      "note": "又在回家的路上听到这首熟悉的旋律，留下一次记录。",
+      "mood": "",
+      "scenes": [],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-08-30",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "19:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-repeat-memory-3",
+      "song_id": "pdf-demo-repeat",
+      "position": 14,
+      "note": "又在回家的路上听到这首熟悉的旋律，留下一次记录。",
+      "mood": "",
+      "scenes": [],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-08-25",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "20:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-repeat-memory-4",
+      "song_id": "pdf-demo-repeat",
+      "position": 17,
+      "note": "又在回家的路上听到这首熟悉的旋律，留下一次记录。",
+      "mood": "",
+      "scenes": [],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-08-20",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "21:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-repeat-memory-5",
+      "song_id": "pdf-demo-repeat",
+      "position": 20,
+      "note": "又在回家的路上听到这首熟悉的旋律，留下一次记录。",
+      "mood": "",
+      "scenes": [],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-08-15",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "22:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-repeat-memory-6",
+      "song_id": "pdf-demo-repeat",
+      "position": 23,
+      "note": "又在回家的路上听到这首熟悉的旋律，留下一次记录。",
+      "mood": "",
+      "scenes": [],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-08-10",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "23:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-night-memory-1",
+      "song_id": "pdf-demo-night",
+      "position": 8,
+      "note": "凌晨还没有睡，把没说出口的话留在这首歌里。",
+      "mood": "今晚有点emo",
+      "scenes": [
+        "深夜戴耳机"
+      ],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-08-26",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "18:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-first-memory-1",
+      "song_id": "pdf-demo-first",
+      "position": 8,
+      "note": "第一次见你的那天，这首歌刚好在店里播放。",
+      "mood": "开心",
+      "scenes": [
+        "第一次见面"
+      ],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-08-17",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "18:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-alone-memory-1",
+      "song_id": "pdf-demo-alone",
+      "position": 8,
+      "note": "一个人坐过了两站，终于不再急着给过去一个答案。",
+      "mood": "放空一下",
+      "scenes": [
+        "一个人"
+      ],
+      "location": "",
+      "visibility": "private",
+      "date": "2026-08-08",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "18:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "pdf-demo-summer-memory-1",
+      "song_id": "pdf-demo-summer",
+      "position": 8,
+      "note": "那个夏天坐在回家的车上，一路望着窗外的树影。",
+      "mood": "",
+      "scenes": [],
+      "location": "",
+      "visibility": "private",
+      "date": "2024-07-12",
+      "photo_url": "",
+      "photo_urls": null,
+      "record_time": "18:20",
+      "chapter_id": "",
+      "replies": [],
+      "sample": true,
+      "created_at": "2026-10-20T07:30:47Z"
+    }
+  ],
+  "chapters": [
+    {
+      "id": "chapter-arrival",
+      "title": "初到这座城市",
+      "description": "把陌生的日子，慢慢过成熟悉。",
+      "color": "#a6c8b8",
+      "created_at": "2026-10-20T07:30:47Z"
+    },
+    {
+      "id": "chapter-small",
+      "title": "平凡生活的小确幸",
+      "description": "不必特别，也值得记住。",
+      "color": "#e7ba91",
+      "created_at": "2026-10-20T07:30:47Z"
+    }
+  ],
+  "settings": {
+    "memory_hints": true,
+    "demo_member": false
+  },
+  "events": []
+}
