@@ -201,12 +201,25 @@ async function main() {
       assert.equal(persisted.note,note);
       assert.deepEqual(persisted.photos,[png.length,png.length,png.length],'photos did not survive another tab and reload');
       await peer.goto(base+'/#player');await peer.locator('.player').waitFor();
-      await peer.locator('[data-act="player-panel"][data-id="story"]').click();
-      await peer.locator('[data-act="player-album"]').click();
-      await peer.locator('.album-item').first().click();
+      await peer.locator('[data-act="entry"]').first().click();
+      await peer.locator(`[data-act="photo-view"][data-id="${saved.id}|1"]`).click();
       await peer.waitForFunction(()=>document.querySelector('.photo-view-stage img')?.naturalWidth>0);
-      await peer.locator('[data-act="photo-memory"]').click();
-      assert.equal(await peer.locator('.memory-focus').count(),1);
+      assert.equal(await peer.locator('.photo-view-actions button').count(),1);
+      assert.equal(await peer.locator('.photo-view-actions').innerText(),'保存图片');
+      assert.equal(await peer.locator('.photo-view-meta p').innerText(),note);
+      const photoDownload=peer.waitForEvent('download');
+      await peer.locator('[data-act="photo-save"]').click();
+      const photo=await photoDownload,photoPath=path.join(temp,'original-photo.png');
+      await photo.saveAs(photoPath);
+      assert.match(photo.suggestedFilename(),/\.png$/,'photo extension does not match its actual format');
+      assert.deepEqual(fs.readFileSync(photoPath),png,'save included card UI or changed original image bytes');
+      await peer.locator('[data-act="photo-close"]').click();
+      assert.equal(await peer.locator('dialog[data-kind="journal"][open]').count(),1,'photo close lost source journal');
+      assert.equal(await peer.locator('dialog .photo-thumb:focus').getAttribute('data-id'),saved.id+'|1');
+      await peer.locator(`[data-act="photo-view"][data-id="${saved.id}|2"]`).click();
+      await peer.keyboard.press('Escape');
+      assert.equal(await peer.locator('dialog[data-kind="journal"][open]').count(),1,'Escape lost source journal');
+      await peer.locator('dialog [data-act="close"]').click();
       await peer.goto(base+'/#settings');await peer.locator('.setting-block').waitFor();
       const backupReady=peer.waitForEvent('download');
       await peer.locator('a[href="/api/backup"]').click();
@@ -277,13 +290,17 @@ async function main() {
     await click('review','calendar');
     const selectedDay=await page.locator('.calendar .selected').getAttribute('data-id');
     assert.equal(await page.locator('.day-entry').count(),withPhotos.filter(m=>m.date===selectedDay).length,'calendar ignored photo filter');
-    await click('review','album');
-    assert.equal(await page.locator('.album-item').count(),reviewRecords.reduce((n,m)=>n+(m.photo_urls?.length||(m.photo_url?1:0)),0),'global album omitted photos');
-    await page.locator(`[data-act="photo-view"][data-id="${saved.id}|0"]`).click();
-    await click('photo-memory',saved.id);
-    assert.equal(await page.locator('#memory-'+saved.id+'.memory-focus').count(),1,'photo did not lead to its song record');
-    await click('history-back');
-    assert.equal(await page.locator('[data-act="review"][data-id="album"].selected').count(),1,'photo return lost global album');
+    await click('review','timeline');
+    assert.equal(await page.locator('[data-act="review"][data-id="album"]').count(),0,'standalone album tab remains');
+    const timelineURL=page.url();
+    await page.locator(`[data-act="photo-view"][data-id="${saved.id}|2"]`).click();
+    assert.equal(await page.locator('.photo-view-stage img').getAttribute('src'),saved.photo_urls[2],'clicked photo index changed');
+    assert.equal(await page.locator('.photo-view-meta p').innerText(),saved.note);
+    assert.equal(await page.locator('[data-act="photo-memory"]').count(),0);
+    await click('photo-close');
+    assert.equal(page.url(),timelineURL,'photo changed timeline route');
+    assert.equal(await page.locator('[data-act="memory-filter"][data-id="photos"][aria-pressed="true"]').count(),1,'photo close lost filter');
+    assert.equal(await page.locator('.photo-thumb').evaluateAll(elements=>elements.some(el=>el.parentElement.closest('button'))),false,'photo buttons are nested in record buttons');
     await page.goto(base+'/#player');
     await page.locator('.player').waitFor();
     await click('entry');
@@ -309,12 +326,11 @@ async function main() {
     await click('period', 'all');
     await page.goto(base + '/#favorites');
     await page.locator('.song-row .label').first().click();
-    await click('history-tab', 'album');
-    if (await page.locator('.album-item').count()) {
-      await page.locator('.album-item').first().click();
+    assert.equal(await page.locator('[data-act="history-tab"]').count(),0,'song album tab remains');
+    if (await page.locator('.photo-thumb').count()) {
+      await page.locator('.photo-thumb').first().click();
       await page.locator('.photo-view-stage img').waitFor();
-      await click('photo-memory');
-      assert.equal(await page.locator('.memory-focus').count(), 1);
+      await click('photo-close');
     }
     for (const width of [360, 430]) {
       await page.setViewportSize({ width, height: 844 });
@@ -322,7 +338,7 @@ async function main() {
         await page.goto(base + '/#' + view);
         await page.locator('section').first().waitFor();
         await layout();
-        if(view==='memories')for(const tab of ['calendar','timeline','album','ring']){await click('review',tab);await layout();}
+        if(view==='memories')for(const tab of ['calendar','timeline','ring']){await click('review',tab);await layout();}
         if(view==='mine'){
           await click('queue');
           await layout();
@@ -333,7 +349,7 @@ async function main() {
       }
     }
     assert.deepEqual(errors, []);
-    console.log('PASS: 360/390/430px layouts, inert navigation tabs, queue playback/history/likes/removal/bulk edit, fixed playlist, playback/seek/lyrics, three photos, create/edit/delete, sharing, song timelines, photo filters, global album and return navigation.');
+    console.log('PASS: 360/390/430px layouts, inert navigation tabs, queue playback/history/likes/removal/bulk edit, fixed playlist, playback/seek/lyrics, three photos, create/edit/delete, sharing, song timelines, photo filters, original photo downloads and return navigation.');
   } catch(error) {
     if(page){
       console.log('Browser failure:',await page.evaluate(()=>({url:location.href,form:document.querySelector('#form-error')?.textContent,upload:document.querySelector('#upload-error')?.textContent,toast:document.querySelector('#toast')?.textContent})).catch(()=>null));
