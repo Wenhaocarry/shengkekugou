@@ -352,7 +352,9 @@ async function main() {
     assert.equal(await page.locator('.player .top .memory-entry').count(),0,'top-left memory entry remains');
     await click('player-menu');
     const playingID=await page.evaluate(()=>sessionStorage.getItem('shengke.prd.song'));
-    assert.equal(await page.locator('.collected-entry-count').innerText(),String(initial.memories.filter(m=>m.song_id===playingID).length));
+    assert.equal(await page.locator('.collected-entry .count').innerText(),String(initial.memories.filter(m=>m.song_id===playingID).length));
+    assert.equal(await page.locator('.collected-entry .memory-entry').evaluate(el=>getComputedStyle(el).borderRadius),'50%');
+    assert.equal((await page.locator('.collected-entry .memory-entry').boundingBox()).width,30);
     await click('entry');
     assert.equal(await page.locator('dialog[data-kind="journal"][open]').count(),1,'collected entry lost memory access');
     await click('close');
@@ -361,6 +363,19 @@ async function main() {
     await page.locator('.gallery-selection h2').waitFor();
     assert.equal(await page.locator('.coverflow-card').count(),new Set(initial.memories.map(m=>m.song_id)).size);
     await page.evaluate(()=>Promise.all([...document.querySelectorAll('.coverflow-card img')].map(image=>image.decode())));
+    const stageBox=await page.locator('.coverflow-track').boundingBox();
+    const beforeDrag=await page.locator('.gallery-selection').getAttribute('data-song-id');
+    await page.mouse.move(stageBox.x+245,stageBox.y+160);await page.mouse.down();
+    await page.mouse.move(stageBox.x+55,stageBox.y+160,{steps:20});await page.mouse.up();
+    await page.waitForFunction(id=>document.querySelector('.gallery-selection')?.dataset.songId!==id,beforeDrag);
+    assert.equal(await page.locator('.gallery-stack').count(),1,'drag opened a record');
+    const beforeSwipe=await page.locator('.gallery-selection').getAttribute('data-song-id'),touch=await context.newCDPSession(page);
+    await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:stageBox.x+70,y:stageBox.y+170}]});
+    for(let i=1;i<=12;i++){await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:stageBox.x+70+i*14,y:stageBox.y+170}]});await page.waitForTimeout(16);}
+    await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await page.waitForFunction(id=>document.querySelector('.gallery-selection')?.dataset.songId!==id,beforeSwipe);
+    await page.evaluate(()=>new Promise(resolve=>{const stage=document.querySelector('.coverflow-track');let previous=stage.scrollLeft,stable=0;const timer=setInterval(()=>{stable=Math.abs(stage.scrollLeft-previous)<.5?stable+1:0;previous=stage.scrollLeft;if(stable===6){clearInterval(timer);resolve();}},50);}));
+    await touch.detach();
     const firstCover=await page.locator('.coverflow-card').first().getAttribute('data-id'),lastCover=await page.locator('.coverflow-card').last().getAttribute('data-id');
     await page.locator('.coverflow-track').focus();await page.keyboard.press('End');
     await page.waitForFunction(id=>document.querySelector('.gallery-selection').dataset.songId===id,lastCover);
@@ -369,6 +384,11 @@ async function main() {
     await page.locator('.coverflow-track').evaluate(el=>el.scrollLeft+=el.firstElementChild.getBoundingClientRect().width);
     await page.waitForFunction(id=>document.querySelector('.gallery-selection').dataset.songId!==id,firstCover);
     const chosen=await page.locator('.gallery-selection').getAttribute('data-song-id');
+    assert.equal(await page.locator('.gallery-stack').count(),1,'entry must default to layered covers');
+    assert((await page.locator('.coverflow-card.is-selected').boundingBox()).width<190,'stack covers too large');
+    await click('gallery-mode');assert.equal(await page.locator('.gallery-flow').count(),1);
+    assert.equal(await page.locator('.gallery-selection').getAttribute('data-song-id'),chosen);
+    await click('gallery-mode');assert.equal(await page.locator('.gallery-stack').count(),1);
     await click('gallery-select',chosen);
     assert.equal(await page.locator('.history-page .memory-card').count(),initial.memories.filter(m=>m.song_id===chosen).length);
     await click('history-back');
@@ -377,7 +397,7 @@ async function main() {
     assert.equal(await page.locator('.memory-gallery').count(),1,'playing a cover left the gallery');
     assert.equal(await page.locator('.gallery-dock-song').getAttribute('data-id'),chosen);
     await click('gallery-play',chosen);assert(await page.locator('audio').evaluate(el=>el.paused));
-    for(const [width,height] of [[360,844],[430,844],[844,390],[1280,900]]){await page.setViewportSize({width,height});await layout();assert.equal(await page.locator('.gallery-selection').getAttribute('data-song-id'),chosen,'resize changed selected cover');}
+    for(const [width,height] of [[360,844],[430,844],[844,390],[1280,900]]){await page.setViewportSize({width,height});await layout();assert((await page.locator('.mobile').boundingBox()).width<=430,'gallery enlarged the app shell');assert.equal(await page.locator('.gallery-selection').getAttribute('data-song-id'),chosen,'resize changed selected cover');}
     await snapshot('v4-gallery');
     if(browserMode){
       assert((await page.evaluate(()=>indexedDB.databases())).some(db=>db.name==='shengke-browser-v3'),'V4 changed the existing browser database');

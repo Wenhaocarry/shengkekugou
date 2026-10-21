@@ -47,7 +47,7 @@ const emoji = m => MOODS.find(x=>x[1]===m)?.[0] || ({'出发':'🎧','小确幸'
 const privacy = v => ({private:'仅自己可见',friends:'好友可见',public:'公开'})[v] || '仅自己可见';
 let state={songs:[],memories:[],settings:{},events:[]}, view='home', currentID='', playerPanel='cover', review='gallery', month=localDate().slice(0,7), day=localDate(), period='month';
 let draft=null, draftPanel='', expanded=false, sheetReturn=null, selectedMemory='', historyID='', shareID='', shareType='card', shareURL='';
-let galleryID='', galleryFrame=0, galleryItems=[];
+let galleryID='', galleryFrame=0, galleryItems=[], galleryMode='stack';
 let photoReturn=null, photoOnly=false, detailReturn='memories', detailScroll=0, historyReturn='favorites', historyScroll=0;
 let pendingSeek=null, shouldPlay=false, completed=0, seeks=0, lastSeek=0, toastTimer, successTimer, nudgeTimer, saving=false;
 const liked=new Set();
@@ -69,7 +69,7 @@ function songInline(s,play=false){const t=track(s);return `<div class="song-inli
 async function api(path,method='GET',body){const r=await fetch(path,{method,headers:body instanceof FormData?{}:body?{'Content-Type':'application/json'}:{},body:body instanceof FormData?body:body?JSON.stringify(body):undefined});const data=await r.json();if(!r.ok)throw Error(data.error||'操作失败，请稍后再试');return data;}
 async function refresh(){const known=new Set(state.songs.map(s=>s.id));state=await api('/api/state');state.memories=state.memories.map(m=>({...m,scenes:m.scenes||[],photo_urls:m.photo_urls||[],visibility:m.visibility||'private'}));queueIDs=queueIDs===null?state.songs.map(s=>s.id):[...queueIDs.filter(id=>bySong(id)),...state.songs.filter(s=>!known.has(s.id)).map(s=>s.id)];}
 function toast(s){$('#toast').textContent=s;$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),2600);}
-function nav(v){if(v==='memories'&&['home','mine'].includes(view))review='gallery';if(view==='favorites')favoriteScroll=$('.favorites')?.scrollTop||0;view=v;location.hash=v;render();window.scrollTo(0,0);if(v==='favorites'&&$('.favorites'))$('.favorites').scrollTop=favoriteScroll;}
+function nav(v){if(v==='memories'&&['home','mine'].includes(view)){review='gallery';galleryMode='stack';}if(view==='favorites')favoriteScroll=$('.favorites')?.scrollTop||0;view=v;location.hash=v;render();window.scrollTo(0,0);if(v==='favorites'&&$('.favorites'))$('.favorites').scrollTop=favoriteScroll;}
 function openSheet(title,html,{back=false,right='',kind=''}={}){
   draftPanel=back?draftPanel:'';
   sheet.dataset.kind=kind;
@@ -199,9 +199,9 @@ function memoryGalleryPage(){
   galleryItems=gallerySongs();
   if(!galleryItems.some(s=>s.id===galleryID))galleryID=galleryItems[Math.floor(galleryItems.length/2)]?.id||'';
   const active=bySong(galleryID),t=track(current());
-  return `<section class="memory-gallery"><div class="gallery-glow" aria-hidden="true"></div>${status()}
-    <header class="gallery-top">${ib('back','nav','返回我的','mine')}<span>声刻<span class="brand-dot">·</span>MEMORIES</span>${ib('settings','nav','声刻设置','settings')}</header>
-    <div class="gallery-heading"><small>EVERY SONG HOLDS A STORY</small><h1>音乐里的<span>每一个你。</span></h1><p><b>${state.memories.length}</b> 个瞬间 <i></i> ${galleryItems.length} 首歌 <i></i> ${new Set(state.memories.map(m=>m.date)).size} 个有音乐的日子</p></div>
+  return `<section class="memory-gallery ${galleryMode==='stack'?'gallery-stack':'gallery-flow'}"><div class="gallery-glow" aria-hidden="true"></div>${status()}
+    <header class="gallery-top">${ib('back','nav','返回我的','mine')}<span>声刻<span class="brand-dot">·</span>MEMORIES</span><button class="icon gallery-switch" data-act="gallery-mode" aria-label="${galleryMode==='stack'?'切换到展开封面':'切换到叠层封面'}" title="${galleryMode==='stack'?'展开封面':'叠层封面'}"><svg viewBox="0 0 24 24" aria-hidden="true">${galleryMode==='stack'?'<path d="M2 7h4v10H2zM9 4h6v16H9zM18 7h4v10h-4z"/>':'<path d="m12 3 10 5-10 5L2 8Zm-10 9 10 5 10-5M2 16l10 5 10-5"/>'}</svg></button></header>
+    <div class="gallery-heading"><small>EVERY SONG HOLDS A STORY</small><h1>${galleryMode==='stack'?'把回忆，<span>叠成一首歌。</span>':'音乐里的<span>每一个你。</span>'}</h1><p><b>${state.memories.length}</b> 个瞬间 <i></i> ${galleryItems.length} 首歌 <i></i> ${new Set(state.memories.map(m=>m.date)).size} 个有音乐的日子</p></div>
     <nav class="gallery-views" aria-label="声刻回顾视图">${[['gallery','封面海'],['calendar','日历'],['timeline','歌曲时间轴'],['ring','声刻环']].map(([id,n])=>`<button data-act="review" data-id="${id}" aria-current="${id==='gallery'?'page':'false'}" class="${id==='gallery'?'selected':''}">${n}</button>`).join('')}</nav>
     ${galleryItems.length?`<div class="coverflow-track" role="region" aria-label="歌曲记忆封面海，左右滑动或按方向键切换" aria-roledescription="轮播" tabindex="0">${galleryItems.map(s=>{const ms=memories(s.id),quote=ms[0]?.note||s.lyrics?.[0]?.text||'音乐记得这一刻';return `<div class="coverflow-item"><button class="coverflow-card" data-act="gallery-select" data-id="${esc(s.id)}" aria-label="选择${esc(track(s).title)}的记忆封面"><img src="${esc(galleryArt(s))}" alt="${esc(track(s).title)}记忆封面" draggable="false"><span class="coverflow-quote">${esc(quote)}</span><span class="coverflow-date">${esc(ms[0]?.date.replaceAll('-','.')||'')}</span></button></div>`;}).join('')}</div>
     <div class="gallery-selection" aria-live="polite" aria-atomic="true"></div>
@@ -215,7 +215,7 @@ function paintGallery(){
   galleryFrame=0;const stage=$('.coverflow-track');if(!stage||!galleryItems.length)return;
   const step=stage.firstElementChild.getBoundingClientRect().width,position=stage.scrollLeft/step,index=Math.max(0,Math.min(galleryItems.length-1,Math.round(position))),song=galleryItems[index];
   galleryID=song.id;
-  [...stage.children].forEach((item,i)=>{const offset=i-position,distance=Math.abs(offset),button=item.firstElementChild;item.style.zIndex=String(100-Math.round(distance*10));button.style.setProperty('--cover-angle',`${Math.max(-56,Math.min(56,-offset*47))}deg`);button.style.setProperty('--cover-scale',String(Math.max(.7,1-distance*.09)));button.style.opacity=String(Math.max(.18,1-distance*.17));button.classList.toggle('is-selected',i===index);button.setAttribute('aria-pressed',String(i===index));button.tabIndex=i===index?0:-1;button.setAttribute('aria-label',`${i===index?'打开':'选择'}${track(galleryItems[i]).title}的记忆`);});
+  [...stage.children].forEach((item,i)=>{const offset=i-position,distance=Math.abs(offset),button=item.firstElementChild;const depth=Math.min(distance,4);button.style.setProperty('--stack-x',`${Math.max(-3,Math.min(3,offset))*29-offset*step}px`);button.style.setProperty('--stack-y',`${-depth*18}px`);button.style.setProperty('--stack-z',`${-depth*65}px`);button.style.setProperty('--stack-tilt',`${Math.max(-13,Math.min(13,offset*7))}deg`);button.style.setProperty('--stack-turn',`${Math.max(-22,Math.min(22,-offset*13))}deg`);item.style.zIndex=String(100-Math.round(distance*10));button.style.setProperty('--cover-angle',`${Math.max(-56,Math.min(56,-offset*47))}deg`);button.style.setProperty('--cover-scale',String(Math.max(.7,1-distance*.09)));button.style.opacity=String(galleryMode==='stack'?Math.max(0,1-Math.max(0,distance-1)*.32):Math.max(.18,1-distance*.17));button.style.pointerEvents=galleryMode==='stack'&&distance>3?'none':'';button.classList.toggle('is-selected',i===index);button.setAttribute('aria-pressed',String(i===index));button.tabIndex=i===index?0:-1;button.setAttribute('aria-label',`${i===index?'打开':'选择'}${track(galleryItems[i]).title}的记忆`);});
   const detail=$('.gallery-selection');
   if(detail.dataset.songId!==song.id){const ms=memories(song.id),t=track(song);detail.dataset.songId=song.id;detail.innerHTML=`<h2>${esc(t.title)}</h2><p>${esc(t.artist)}<span>${ms.length} 段记忆</span></p>`;$('.gallery-open').dataset.id=song.id;$('.gallery-listen').dataset.id=song.id;$('.gallery-counter').textContent=`${String(index+1).padStart(2,'0')} / ${String(galleryItems.length).padStart(2,'0')}`;updatePlay();}
 }
@@ -224,6 +224,12 @@ function mountGallery(){
   stage.scrollLeft=Math.max(0,galleryItems.findIndex(s=>s.id===galleryID))*stage.firstElementChild.getBoundingClientRect().width;
   stage.onscroll=()=>{if(!galleryFrame)galleryFrame=requestAnimationFrame(paintGallery);};
   stage.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();if(e.key==='Home'||e.key==='End')scrollGallery(galleryItems[e.key==='Home'?0:galleryItems.length-1].id);else stepGallery(e.key==='ArrowLeft'?-1:1);}};
+  let drag=null,suppressClick=false;
+  stage.onpointerdown=e=>{suppressClick=false;if(e.pointerType!=='mouse'||e.button!==0)return;drag={x:e.clientX,left:stage.scrollLeft,id:e.pointerId,moved:false};};
+  stage.onpointermove=e=>{if(!drag)return;if(!e.buttons){finishDrag();return;}const delta=e.clientX-drag.x;if(Math.abs(delta)>5&&!drag.moved){drag.moved=true;stage.setPointerCapture(drag.id);stage.style.scrollSnapType='none';stage.classList.add('is-dragging');}if(drag.moved){e.preventDefault();stage.scrollLeft=drag.left-delta;}};
+  const finishDrag=()=>{if(!drag)return;const moved=drag.moved;drag=null;stage.style.scrollSnapType='';stage.classList.remove('is-dragging');if(moved){suppressClick=true;paintGallery();scrollGallery(galleryID);}};
+  stage.onpointerup=finishDrag;stage.onpointercancel=finishDrag;
+  stage.addEventListener('click',e=>{if(suppressClick){suppressClick=false;e.preventDefault();e.stopPropagation();}},true);
   paintGallery();
 }
 function scrollGallery(id){const stage=$('.coverflow-track'),index=galleryItems.findIndex(s=>s.id===id);if(!stage||index<0)return;stage.scrollTo({left:index*stage.firstElementChild.getBoundingClientRect().width,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
@@ -368,6 +374,7 @@ function memoryMenu(id){const choices=[['share','分享记忆','share'],['detail
 function upload(){openSheet('添加本地歌曲',`<form id="upload" class="upload-form"><label>音频文件<input id="audio-file" type="file" accept="audio/*" required></label><label>歌曲名<input class="text-field" name="title" maxlength="120" required></label><label>歌手<input class="text-field" name="artist" maxlength="120"></label><p class="picker-hint">仅使用你有权播放的文件，最大 52 MB。</p><div id="upload-error" class="form-error"></div><button class="primary" type="submit">添加歌曲</button></form>`);}
 const actions={
  nav:nav,close:closeSheet,
+ 'gallery-mode':()=>{galleryMode=galleryMode==='stack'?'flow':'stack';render();},
  'gallery-select':id=>{if(galleryID===id)actions['gallery-open'](id);else scrollGallery(id);},
  'gallery-step':id=>stepGallery(Number(id)),
  'gallery-open':id=>{photoOnly=false;actions['full-history'](id);},
@@ -402,7 +409,7 @@ const actions={
  'song-share':()=>{const m=memories(currentID)[0];m?showShare(m.id):compose();},copy:async id=>{await navigator.clipboard.writeText(byMemory(id).note);toast('文案已复制');},
  'delete-confirm':id=>openSheet('删除这条记忆？',`<p class="picker-hint">删除后无法在页面内恢复。</p><button class="primary" data-act="delete" data-id="${id}" style="margin:20px 0;background:#e65b6c">确认删除</button><button class="secondary" data-act="close" style="width:100%">取消</button>`),
  delete:async id=>{await api('/api/memories/'+id,'DELETE');await refresh();closeSheet();if(view==='detail')nav('memories');else render();toast('记忆已删除');},
- 'player-menu':()=>{const ms=memories(currentID),m=ms[0];openSheet('歌曲选项',`<button class="row-choice collected-entry" data-act="entry"><span class="collected-entry-art">${m?(photos(m)[0]?`<img src="${esc(photos(m)[0])}" alt="">`:toneIcon(m.mood)):svg('plus')}</span><span class="copy"><b>声刻记忆</b><small>${ms.length?'重遇这首歌里的每一个自己':'记录这首歌带来的第一段心情'}</small></span><span class="collected-entry-count">${ms.length||'＋'}</span>${svg('chevron')}</button><button class="row-choice" data-act="nav-close" data-id="favorites">我喜欢的音乐</button><button class="row-choice" data-act="nav-close" data-id="mine">我的</button>`);},
+ 'player-menu':()=>{const ms=memories(currentID),m=ms[0];openSheet('歌曲选项',`<div class="collected-entry"><button class="memory-entry" data-act="entry" aria-label="${m?'查看这首歌的记忆':'创建音乐记忆'}">${m?(photos(m)[0]?`<img src="${esc(photos(m)[0])}" alt="">`:toneIcon(m.mood)):svg('plus')}${ms.length>0?`<span class="count">${ms.length}</span>`:''}</button></div><button class="row-choice" data-act="nav-close" data-id="favorites">我喜欢的音乐</button><button class="row-choice" data-act="nav-close" data-id="mine">我的</button>`);},
  'song-menu':id=>openSheet(track(bySong(id)).title,`<button class="row-choice" data-act="play-song" data-id="${id}">播放歌曲</button><button class="row-choice" data-act="compose" data-id="${id}">创建音乐记忆</button><button class="row-choice" data-act="history-sheet" data-id="${id}">这首歌的记忆</button>`),
  'history-sheet':openHistory,'nav-close':id=>{closeSheet();nav(id);},lyrics:()=>openSheet('歌词',`<div class="history-list">${(current()?.lyrics||[]).map(l=>`<button class="row-choice" data-act="seek-line" data-id="${l.time}">${fmt(l.time)}　${esc(l.text)}</button>`).join('')||'<div class="empty">暂无时间轴歌词</div>'}</div>`),
  'seek-line':id=>{audio.currentTime=+id;closeSheet();},upload,listening:()=>toast('累计时长来自本地演示播放'),leqian:()=>toast('每一个音乐日常，都可以记在声刻里'),retry:()=>boot()
