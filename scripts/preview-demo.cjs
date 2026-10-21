@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = fs.realpathSync(path.join(__dirname, '../dist'));
 const headers = Object.fromEntries(require('../vercel.json').headers[0].headers.map(header => [header.key, header.value]));
-const types = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.wav': 'audio/wav', '.mp3': 'audio/mpeg' };
+const types = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.wav': 'audio/wav', '.mp3': 'audio/mpeg' };
 const port = Number(process.argv[2] || 8090);
 http.createServer((request, response) => {
   for (const [key, value] of Object.entries(headers)) response.setHeader(key, value);

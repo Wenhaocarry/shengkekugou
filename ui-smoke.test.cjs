@@ -7,7 +7,7 @@ const { spawn, spawnSync } = require('node:child_process');
 const { chromium } = require('playwright');
 
 async function main() {
-  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'shengke-v3-ui-'));
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'shengke-v4-ui-'));
   const previews = path.join(__dirname, 'docs/previews');
   fs.mkdirSync(previews, { recursive: true });
   const browserMode = process.argv.includes('--browser');
@@ -152,7 +152,7 @@ async function main() {
     await snapshot('related');
     await click('player-panel', 'story');
     await click('compose');
-    const note = 'V3 自动验证：让音乐记住这一刻';
+    const note = 'V4 自动验证：让音乐记住这一刻';
     await page.locator('#note').fill(note);
     assert.equal(await page.locator('#note').evaluate(el=>getComputedStyle(el).outlineStyle),'none','editor has a focus frame');
     await click('pick-mood');
@@ -348,8 +348,51 @@ async function main() {
         }
       }
     }
+    await page.goto(base+'/#player');
+    assert.equal(await page.locator('.player .top .memory-entry').count(),0,'top-left memory entry remains');
+    await click('player-menu');
+    const playingID=await page.evaluate(()=>sessionStorage.getItem('shengke.prd.song'));
+    assert.equal(await page.locator('.collected-entry-count').innerText(),String(initial.memories.filter(m=>m.song_id===playingID).length));
+    await click('entry');
+    assert.equal(await page.locator('dialog[data-kind="journal"][open]').count(),1,'collected entry lost memory access');
+    await click('close');
+    await page.goto(base+'/#mine');
+    await page.locator('.memory-gateway').click();
+    await page.locator('.gallery-selection h2').waitFor();
+    assert.equal(await page.locator('.coverflow-card').count(),new Set(initial.memories.map(m=>m.song_id)).size);
+    await page.evaluate(()=>Promise.all([...document.querySelectorAll('.coverflow-card img')].map(image=>image.decode())));
+    const firstCover=await page.locator('.coverflow-card').first().getAttribute('data-id'),lastCover=await page.locator('.coverflow-card').last().getAttribute('data-id');
+    await page.locator('.coverflow-track').focus();await page.keyboard.press('End');
+    await page.waitForFunction(id=>document.querySelector('.gallery-selection').dataset.songId===id,lastCover);
+    await click('gallery-step','1');
+    await page.waitForFunction(id=>document.querySelector('.gallery-selection').dataset.songId===id,firstCover);
+    await page.locator('.coverflow-track').evaluate(el=>el.scrollLeft+=el.firstElementChild.getBoundingClientRect().width);
+    await page.waitForFunction(id=>document.querySelector('.gallery-selection').dataset.songId!==id,firstCover);
+    const chosen=await page.locator('.gallery-selection').getAttribute('data-song-id');
+    await click('gallery-select',chosen);
+    assert.equal(await page.locator('.history-page .memory-card').count(),initial.memories.filter(m=>m.song_id===chosen).length);
+    await click('history-back');
+    assert.equal(await page.locator('.gallery-selection').getAttribute('data-song-id'),chosen,'return lost selected cover');
+    await click('gallery-play',chosen);await page.waitForFunction(()=>!document.querySelector('audio').paused);
+    assert.equal(await page.locator('.memory-gallery').count(),1,'playing a cover left the gallery');
+    assert.equal(await page.locator('.gallery-dock-song').getAttribute('data-id'),chosen);
+    await click('gallery-play',chosen);assert(await page.locator('audio').evaluate(el=>el.paused));
+    for(const [width,height] of [[360,844],[430,844],[844,390],[1280,900]]){await page.setViewportSize({width,height});await layout();assert.equal(await page.locator('.gallery-selection').getAttribute('data-song-id'),chosen,'resize changed selected cover');}
+    await snapshot('v4-gallery');
+    if(browserMode){
+      assert((await page.evaluate(()=>indexedDB.databases())).some(db=>db.name==='shengke-browser-v3'),'V4 changed the existing browser database');
+      const emptyContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'}),empty=await emptyContext.newPage();
+      await empty.goto(base+'/#memories');await empty.locator('.memory-gallery').waitFor();
+      await empty.evaluate(async()=>{const state=await(await fetch('/api/state')).json();for(const m of state.memories)await fetch('/api/memories/'+m.id,{method:'DELETE'});});
+      await empty.reload();await empty.locator('.gallery-empty').waitFor();
+      assert.equal(await empty.locator('.coverflow-card').count(),0,'empty collection fabricated records');
+      await empty.locator('.gallery-empty [data-act="compose"]').click();await empty.locator('#composer').waitFor();
+      await empty.locator('dialog [data-act="close"]').click();await empty.goto(base+'/#player');await empty.locator('[data-act="player-menu"]').click();
+      await empty.locator('dialog [data-act="entry"]').click();await empty.locator('#composer').waitFor();
+      await emptyContext.close();
+    }
     assert.deepEqual(errors, []);
-    console.log('PASS: 360/390/430px layouts, inert navigation tabs, queue playback/history/likes/removal/bulk edit, fixed playlist, playback/seek/lyrics, three photos, create/edit/delete, sharing, song timelines, photo filters, original photo downloads and return navigation.');
+    console.log('PASS: existing V3 flows, V4 collected menu entry, cover selection/scroll/keyboard/wrap, gallery playback and return, portrait/landscape/desktop, empty collection and database continuity.');
   } catch(error) {
     if(page){
       console.log('Browser failure:',await page.evaluate(()=>({url:location.href,form:document.querySelector('#form-error')?.textContent,upload:document.querySelector('#upload-error')?.textContent,toast:document.querySelector('#toast')?.textContent})).catch(()=>null));

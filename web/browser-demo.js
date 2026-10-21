@@ -3,6 +3,7 @@ import { makeZip } from './demo-zip.js';
 export async function installBrowserDemo() {
   const networkFetch = window.fetch.bind(window);
   const db = await new Promise((resolve, reject) => {
+    // Keep the existing database so V4 retains records created in V3.
     const request = indexedDB.open('shengke-browser-v3', 1);
     request.onupgradeneeded = () => { request.result.createObjectStore('state'); request.result.createObjectStore('media'); };
     request.onsuccess = () => resolve(request.result);
