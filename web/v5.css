@@ -16,9 +16,9 @@ body.gallery-open .mobile { width: min(100%,430px); max-width: 430px; margin: au
 .coverflow-track.is-dragging, .coverflow-track.is-dragging .coverflow-card { cursor: grabbing; }
 .gallery-scroll-space { position: relative; width: 100%; }
 .gallery-scene { position: sticky; top: 0; width: 100%; height: var(--scene-h); }
-.gallery-scene::before { content: ''; position: absolute; left: 12%; right: 12%; top: 76%; height: 13%; border-radius: 50%; background: #5184ac1c; filter: blur(24px); pointer-events: none; }
+.gallery-scene::before { content: ''; position: absolute; left: 12%; right: 12%; top: 70%; height: 13%; border-radius: 50%; background: #5184ac1c; filter: blur(24px); pointer-events: none; }
 .gallery-snap { position: absolute; left: 0; width: 1px; height: 1px; scroll-snap-align: start; pointer-events: none; }
-.coverflow-card { position: absolute; left: 50%; top: 50%; display: block; width: min(76%,300px,calc(var(--scene-h)*.62)); height: auto; aspect-ratio: 1; padding: 0; border: 1px solid #c3ddf64a; border-radius: 7px; overflow: hidden; background: #142335; transform: translate(-50%,-50%) perspective(850px) translate3d(var(--x,0px),var(--y,0px),var(--z,0px)) rotateX(var(--tilt,0deg)) rotateY(var(--turn,0deg)) rotateZ(var(--roll,0deg)); box-shadow: 2px 3px 0 #172639,4px 6px 0 #040a11,0 25px 48px #0009; backface-visibility: hidden; }
+.coverflow-card { position: absolute; left: 50%; top: 44%; display: block; width: min(76%,300px,calc(var(--scene-h)*.62)); height: auto; aspect-ratio: 1; padding: 0; border: 1px solid #c3ddf64a; border-radius: 7px; overflow: hidden; background: #142335; transform: translate(-50%,-50%) perspective(850px) translate3d(var(--x,0px),var(--y,0px),var(--z,0px)) rotateX(var(--tilt,0deg)) rotateY(var(--turn,0deg)) rotateZ(var(--roll,0deg)); box-shadow: 2px 3px 0 #172639,4px 6px 0 #040a11,0 25px 48px #0009; backface-visibility: hidden; }
 .coverflow-card::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg,#ffffff10,transparent 44%,#00000015); pointer-events: none; }
 .coverflow-card { pointer-events: var(--hit,auto); }
 .coverflow-card img { width: 100%; height: 100%; aspect-ratio: 1; display: block; object-fit: contain; user-select: none; pointer-events: none; filter: brightness(var(--light,1)); }
