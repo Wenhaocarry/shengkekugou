@@ -49,6 +49,7 @@ const privacy = v => ({private:'仅自己可见',friends:'好友可见',public:'
 let state={songs:[],memories:[],settings:{},events:[]}, view='home', currentID='', playerPanel='cover', review='gallery', month=localDate().slice(0,7), day=localDate(), period='month';
 let draft=null, draftPanel='', expanded=false, sheetReturn=null, selectedMemory='', historyID='', shareID='', shareType='card', shareURL='';
 let galleryID='', galleryFrame=0, galleryItems=[], galleryStoryOpen=false, galleryPosition=0;
+let galleryReveal=null;
 let photoReturn=null, photoOnly=false, detailReturn='memories', detailScroll=0, historyReturn='favorites', historyScroll=0;
 let pendingSeek=null, shouldPlay=false, completed=0, seeks=0, lastSeek=0, toastTimer, successTimer, nudgeTimer, saving=false;
 const liked=new Set();
@@ -82,7 +83,7 @@ function openSheet(title,html,{back=false,right='',kind=''}={}){
   $('#sheet-body').scrollTop=0;
 }
 function closeSheet(){if(saving)return;sheet.close();draftPanel='';}
-function render(){if(galleryFrame){cancelAnimationFrame(galleryFrame);galleryFrame=0;}document.body.classList.toggle('gallery-open',view==='memories'&&review==='gallery');app.innerHTML=({home:homePage,player:playerPage,mine:minePage,favorites:favoritesPage,memories:memoriesPage,history:historyPage,detail:detailPage,settings:settingsPage})[view]?.()||homePage();updatePlay();mountGallery();}
+function render(){galleryReveal?.cancel();galleryReveal=null;if(galleryFrame){cancelAnimationFrame(galleryFrame);galleryFrame=0;}document.body.classList.toggle('gallery-open',view==='memories'&&review==='gallery');app.innerHTML=({home:homePage,player:playerPage,mine:minePage,favorites:favoritesPage,memories:memoriesPage,history:historyPage,detail:detailPage,settings:settingsPage})[view]?.()||homePage();updatePlay();mountGallery();}
 const avatar = () => `<span class="avatar"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#eaf5ff"/><path d="M12 64c0-16 8-23 20-23s20 7 20 23" fill="#8eb5e4"/><path d="M26 42v7l6 6 6-6v-7" fill="#f3d9cb"/><ellipse cx="32" cy="28" rx="15" ry="18" fill="#ffe8d8"/><path d="M16 29C9 6 42-4 49 20l-2 13-5-16c-8 11-16 4-22 12l-2 9Z" fill="#9caac2"/><path d="M25 31h2m10 0h2" stroke="#4c6082" stroke-width="2" stroke-linecap="round"/><path d="M29 37q3 3 6 0" fill="none" stroke="#d59d94" stroke-width="1.5"/></svg></span>`;
 function appTabs(selected){
   return `<nav class="app-tabs" aria-label="主导航">${[['home','home','首页'],['live','live','直播'],['member','diamond','会员'],['benefit','benefit','福利'],['mine','user','我的']].map(([id,icon,label])=>`<button type="button" class="${selected===id?'selected':''}" ${id==='home'||id==='mine'?`data-act="nav" data-id="${id}"`:'aria-disabled="true"'} ${selected===id?'aria-current="page"':''}><span class="tab-icon">${id==='home'?'<span class="kugou-tab-logo">K</span>':svg(icon)}</span>${label}</button>`).join('')}</nav>`;
@@ -198,16 +199,19 @@ function memoryGateway(){
 }
 function galleryStory(song){
   const ms=memories(song.id),t=track(song);
-  return `<div class="story-handle" aria-hidden="true"></div><header class="story-head"><span><small>${esc(t.artist)} · ${ms.length} 段记忆</small><h2>${esc(t.title)}</h2></span>${ib('close','gallery-close','收起记忆')}</header><div class="story-scroll">${ms.map(m=>`<article class="story-memory" data-memory-id="${esc(m.id)}"><div class="story-meta"><time datetime="${esc(m.date)}T${esc(memoryTime(m))}">${esc(m.date.replaceAll('-','.'))} · ${esc(memoryTime(m))}</time>${m.mood?`<span class="story-mood">${toneIcon(m.mood)} ${esc(m.mood)}</span>`:''}</div><p>${esc(m.note||'这一刻，旋律记得。')}</p>${photoHTML(m)}${m.scenes.length||m.location?`<div class="story-tags">${m.scenes.map(x=>`<span>${esc(x)}</span>`).join('')}${m.location?`<span>📍 ${esc(m.location)}</span>`:''}</div>`:''}<button class="story-edit" data-act="edit" data-id="${esc(m.id)}">编辑这段记忆 ${svg('chevron')}</button></article>`).join('')}<button class="story-add" data-act="compose" data-id="${esc(song.id)}">＋ 再记一笔</button></div>`;
+  return `<header class="story-head"><span><small>${esc(t.artist)} · ${ms.length} 段记忆</small><h2>${esc(t.title)}</h2></span>${ib('close','gallery-close','收起记忆')}</header>
+    ${ms.length>1?`<nav class="story-nav" aria-label="翻阅这首歌的记忆">${ib('back','gallery-moment-step','上一段记忆','-1')}<div class="story-moments">${ms.map((m,i)=>`<button data-act="gallery-moment" data-id="${i}" aria-label="查看 ${esc(m.date)} ${esc(memoryTime(m))} 的记忆" aria-current="${i===0?'step':'false'}"><span></span></button>`).join('')}</div><span class="story-count" aria-live="polite">1 / ${ms.length}</span>${ib('chevron','gallery-moment-step','下一段记忆','1')}</nav>`:''}
+    <div class="story-scroll" role="region" aria-label="左右滑动翻阅记忆" tabindex="${ms.length>1?0:-1}">${ms.map((m,i)=>`<article class="story-memory ${i===0?'is-current':''}" tabindex="0" data-memory-id="${esc(m.id)}" ${i?'inert':''}><div class="story-meta"><time datetime="${esc(m.date)}T${esc(memoryTime(m))}"><strong>${esc(m.date.slice(5).replace('-','.'))}</strong><small>${esc(m.date.slice(0,4))} · ${esc(memoryTime(m))}</small></time>${m.mood?`<span class="story-mood">${toneIcon(m.mood)}<span>${esc(m.mood)}</span></span>`:''}</div><p class="story-note">${esc(m.note||'这一刻，旋律记得。')}</p>${photoHTML(m)}${m.scenes.length||m.location?`<div class="story-tags">${m.scenes.map(x=>`<span>${esc(x)}</span>`).join('')}${m.location?`<span>${svg('pin')}${esc(m.location)}</span>`:''}</div>`:''}<button class="story-edit" data-act="edit" data-id="${esc(m.id)}">编辑这段记忆 ${svg('chevron')}</button></article>`).join('')}</div><button class="story-add" data-act="compose" data-id="${esc(song.id)}">${svg('plus')} 再记一笔</button>`;
 }
 function memoryGalleryPage(){
   galleryItems=gallerySongs();
   if(!galleryItems.some(s=>s.id===galleryID))galleryID=galleryItems[0]?.id||'';
   const active=bySong(galleryID);
   return `<section class="memory-gallery ${galleryStoryOpen?'story-open':''}" data-song-id="${esc(galleryID)}">${status()}
+    <div class="gallery-aura" aria-hidden="true" style="background-image:url('${esc(galleryArt(active))}')"></div>
     <header class="gallery-top">${ib('back','nav','返回我的','mine')}<span>声刻记忆</span><button class="icon gallery-switch" data-act="gallery-mode" aria-label="切换到日历、歌曲时间轴和声刻环" title="切换到回顾视图"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v16H3zM3 10h18M9 4v16M14 14h4M14 17h4"/></svg></button></header>
     ${galleryItems.length?`<div class="coverflow-track" role="region" aria-label="立体记忆封面，上下循环滑动，轻触图片查看记录" tabindex="0"><div class="gallery-scroll-space"><div class="gallery-scene">${galleryItems.slice(0,3).map(s=>`<button class="coverflow-card" data-act="gallery-select" data-id="${esc(s.id)}"><img src="${esc(galleryArt(s))}" alt="" draggable="false"><span class="coverflow-caption"><strong>${esc(track(s).title)}</strong><small>${esc(track(s).artist)}</small></span></button>`).join('')}</div>${Array.from({length:galleryItems.length*5+1},(_,i)=>`<span class="gallery-snap" style="top:calc(var(--step)*${i})" aria-hidden="true"></span>`).join('')}</div></div>`:`<div class="gallery-empty"><div class="empty-cover-fan" aria-hidden="true">${[1,2,6].map(n=>`<img src="/memory-covers-v2/${String(n).padStart(2,'0')}.png" alt="">`).join('')}</div><h2>第一段回忆，从这首歌开始。</h2><p>写下一句话，让喜欢的旋律记住今天。</p><button class="gallery-create" data-act="compose">留下第一段声刻 ${svg('plus')}</button></div>`}
-    <div class="gallery-focus" aria-hidden="true"><img src="${esc(galleryArt(active))}" alt=""></div>
+    <div class="gallery-focus" aria-hidden="true"><span class="memory-vinyl"><span></span></span><img src="${esc(galleryArt(active))}" alt=""></div>
     <section class="gallery-story" aria-label="歌曲记忆详情" aria-hidden="${galleryStoryOpen?'false':'true'}" ${galleryStoryOpen?'':'inert'}>${active?galleryStory(active):''}</section>
   </section>`;
 }
@@ -250,9 +254,75 @@ function mountGallery(){
   stage.addEventListener('click',e=>{if(suppressClick){suppressClick=false;e.preventDefault();e.stopPropagation();}},true);
   galleryItems.forEach(song=>{const image=new Image();image.src=galleryArt(song);});
   paintGallery();
+  if(galleryStoryOpen)mountGalleryStory();
 }
-function openGalleryStory(id,source){const song=bySong(id);if(!song)return;const scroll=$('.coverflow-track');if(scroll)galleryPosition=((scroll.scrollTop/galleryScrollStep(scroll))%galleryItems.length+galleryItems.length)%galleryItems.length;galleryID=id;galleryStoryOpen=true;const stage=$('.memory-gallery'),panel=$('.gallery-story'),focus=$('.gallery-focus'),image=focus.querySelector('img');source=source||$$('.coverflow-card').find(b=>b.dataset.id===id);$$('.coverflow-card').forEach(b=>b.classList.toggle('is-selected',b===source));stage.dataset.songId=id;focus.classList.add('preparing');image.src=galleryArt(song);if(source){const from=source.getBoundingClientRect(),to=focus.getBoundingClientRect();focus.style.setProperty('--from-x',`${(from.left-to.left)/uiScale()}px`);focus.style.setProperty('--from-y',`${(from.top-to.top)/uiScale()}px`);focus.style.setProperty('--from-w',`${from.width/uiScale()}px`);focus.style.setProperty('--from-h',`${from.height/uiScale()}px`);}image.getBoundingClientRect();focus.classList.remove('preparing');stage.classList.add('story-open');panel.innerHTML=galleryStory(song);panel.inert=false;panel.setAttribute('aria-hidden','false');panel.querySelector('[data-act="gallery-close"]')?.focus({preventScroll:true});}
-function closeGalleryStory(){galleryStoryOpen=false;const track=$('.coverflow-track');if(track){sizeGallery(track);paintGallery();}$('.memory-gallery')?.classList.remove('story-open');const panel=$('.gallery-story');if(panel){panel.inert=true;panel.setAttribute('aria-hidden','true');}$('.coverflow-card.is-selected')?.focus({preventScroll:true});}
+function gallerySourceTransform(source,focus){
+  const from=source.getBoundingClientRect(),to=focus.getBoundingClientRect(),scale=uiScale();
+  return `translate(${(from.left-to.left)/scale}px,${(from.top-to.top)/scale}px) scale(${from.width/to.width},${from.height/to.height})`;
+}
+function openGalleryStory(id,source){
+  const song=bySong(id),stage=$('.memory-gallery');if(!song||galleryStoryOpen||stage.classList.contains('story-closing'))return;
+  const scroll=$('.coverflow-track');if(scroll)galleryPosition=((scroll.scrollTop/galleryScrollStep(scroll))%galleryItems.length+galleryItems.length)%galleryItems.length;
+  galleryID=id;galleryStoryOpen=true;
+  const panel=$('.gallery-story'),focus=$('.gallery-focus'),image=focus.querySelector('img');
+  source=source||$$('.coverflow-card').find(b=>b.dataset.id===id);
+  $$('.coverflow-card').forEach(b=>b.classList.toggle('is-selected',b===source));
+  stage.dataset.songId=id;image.src=galleryArt(song);$('.gallery-aura').style.backgroundImage=`url('${galleryArt(song)}')`;
+  panel.innerHTML=galleryStory(song);panel.inert=false;panel.setAttribute('aria-hidden','false');
+  stage.classList.add('story-open');mountGalleryStory();
+  if(source&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const to=focus.getBoundingClientRect(),frame=stage.getBoundingClientRect(),scale=uiScale();
+    galleryReveal=image.animate([
+      {transform:gallerySourceTransform(source,focus),easing:'cubic-bezier(.2,.75,.2,1)'},
+      {transform:`translate(${(frame.left+22*scale-to.left)/scale}px,${(frame.top+155*scale-to.top)/scale}px) scale(${316/focus.clientWidth})`,offset:.38,easing:'cubic-bezier(.16,1,.3,1)'},
+      {transform:'rotate(-3deg)'}
+    ],{duration:720,easing:'linear'});
+  }
+  panel.querySelector('[data-act="gallery-close"]')?.focus({preventScroll:true});
+}
+async function closeGalleryStory(){
+  const stage=$('.memory-gallery');if(!stage||stage.classList.contains('story-closing'))return;
+  galleryStoryOpen=false;stage.classList.add('story-closing');
+  const panel=$('.gallery-story'),focus=$('.gallery-focus'),image=focus.querySelector('img'),source=$('.coverflow-card.is-selected');
+  panel.inert=true;panel.setAttribute('aria-hidden','true');
+  if(source&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const currentTransform=getComputedStyle(image).transform;galleryReveal?.cancel();
+    galleryReveal=image.animate([{transform:currentTransform},{transform:gallerySourceTransform(source,focus)}],{duration:460,easing:'cubic-bezier(.4,0,.16,1)',fill:'forwards'});
+    try{await galleryReveal.finished;}catch{}
+  }
+  if(!stage.isConnected)return;
+  stage.classList.remove('story-open','story-closing');galleryReveal?.cancel();galleryReveal=null;
+  const track=$('.coverflow-track');if(track){sizeGallery(track);paintGallery();}
+  source?.focus({preventScroll:true});
+}
+function galleryMoment(index,scroll=true){
+  const panel=$('.gallery-story'),list=$('.story-scroll'),cards=$$('.story-memory',panel);if(!cards.length)return;
+  index=Math.max(0,Math.min(cards.length-1,Number(index)));
+  if(panel.dataset.moment!==undefined&&Number(panel.dataset.moment)!==index)panel.classList.add('has-turned');
+  panel.dataset.moment=index;
+  cards.forEach((card,i)=>{card.classList.toggle('is-current',i===index);card.inert=i!==index;});
+  $$('.story-moments button',panel).forEach((b,i)=>b.setAttribute('aria-current',i===index?'step':'false'));
+  if($('.story-count',panel))$('.story-count',panel).textContent=`${index+1} / ${cards.length}`;
+  for(const direction of [-1,1]){const b=$(`[data-act="gallery-moment-step"][data-id="${direction}"]`,panel);if(b)b.disabled=direction<0?index===0:index===cards.length-1;}
+  $('.gallery-focus').style.setProperty('--disc-turn',`${index*65}deg`);
+  if(scroll)list.scrollTo({left:cards[index].offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+}
+function mountGalleryStory(){
+  const list=$('.story-scroll');if(!list)return;list.parentElement.classList.remove('has-turned');delete list.parentElement.dataset.moment;galleryMoment(0,false);
+  list.onscroll=()=>galleryMoment(Math.round(list.scrollLeft/(list.clientWidth+12)),false);
+  // Handle only horizontal drags; vertical scrolling stays native for long notes.
+  let drag=null,suppressClick=false;
+  list.onpointerdown=e=>{suppressClick=false;if(!e.isPrimary||e.button!==0)return;drag={x:e.clientX,y:e.clientY,left:list.scrollLeft,id:e.pointerId,moved:false};};
+  list.onpointermove=e=>{
+    if(!drag)return;if(e.pointerType==='mouse'&&!e.buttons){finish();return;}const dx=(e.clientX-drag.x)/uiScale(),dy=(e.clientY-drag.y)/uiScale();
+    if(!drag.moved&&Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)*1.2){drag.moved=true;list.setPointerCapture(drag.id);list.style.scrollSnapType='none';list.style.userSelect='none';}
+    if(drag.moved){e.preventDefault();list.scrollLeft=drag.left-dx;}
+  };
+  const finish=()=>{if(!drag)return;const moved=drag.moved;drag=null;list.style.scrollSnapType='';list.style.userSelect='';if(moved){suppressClick=true;galleryMoment(Math.round(list.scrollLeft/(list.clientWidth+12)));}};
+  list.onpointerup=finish;list.onpointercancel=finish;
+  list.addEventListener('click',e=>{if(suppressClick){suppressClick=false;e.preventDefault();e.stopPropagation();}},true);
+  list.onkeydown=e=>{if((e.target===list||e.target.matches('.story-memory'))&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();list.focus({preventScroll:true});galleryMoment(Number(list.parentElement.dataset.moment)+(e.key==='ArrowLeft'?-1:1));}};
+}
 function memoriesPage(){
   if(review==='gallery')return memoryGalleryPage();
   return `<section class="page-white"><header class="memory-head">${status()}${top('我的声刻','mine',ib('menu','review','返回封面','gallery'))}<div class="hero"><h2>把生活的每一种情绪<br>都留在歌里</h2><p>${state.memories.length} 个音乐瞬间 · ${new Set(state.memories.map(m=>m.song_id)).size} 首歌 · ${new Set(state.memories.map(m=>m.mood).filter(Boolean)).size} 种心情</p></div></header><div class="memory-body"><nav class="tabs">${[['calendar','日历'],['timeline','歌曲时间轴'],['ring','声刻环']].map(([id,n])=>`<button class="${review===id?'selected':''}" data-act="review" data-id="${id}" aria-current="${review===id?'page':'false'}">${n}</button>`).join('')}</nav>${review==='calendar'||review==='timeline'?recordFilters(state.memories):''}${review==='calendar'?calendar():review==='timeline'?timeline():ring()}<div class="sticky-bottom"><button class="primary" data-act="compose">＋ 再记一笔</button></div></div></section>`;
@@ -396,6 +466,8 @@ const actions={
  'gallery-mode':()=>{galleryStoryOpen=false;review='calendar';render();},
  'gallery-select':openGalleryStory,
  'gallery-close':closeGalleryStory,
+ 'gallery-moment':galleryMoment,
+ 'gallery-moment-step':direction=>galleryMoment(Number($('.gallery-story').dataset.moment||0)+Number(direction)),
  'player-panel':id=>{if(!['cover','lyrics','story','related'].includes(id))return;playerPanel=id;render();},
  'download-song':()=>{const s=current();if(!s)return;const a=document.createElement('a');a.href=s.audio_url;a.download=track(s).title;a.click();},
  entry:()=>memories(currentID).length?openHistory():compose(),compose:id=>compose(id||currentID),edit:id=>compose('',byMemory(id)),
