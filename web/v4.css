@@ -1,6 +1,6 @@
 /* V4: an immersive collection; the existing reading and editing surfaces stay light. */
 .player-bottom { position: relative; }
-.player-bottom > .nudge { top: auto; left: auto; right: 0; bottom: calc(100% + 10px); max-width: calc(100vw - 38px); }
+.player-bottom > .nudge { top: auto; left: auto; right: 0; bottom: calc(100% + 10px); max-width: calc(calc(var(--app-unit-x) * 100) - 38px); }
 .player-bottom > .nudge::before { left: auto; top: auto; right: 13px; bottom: -5px; width: 0; height: 0; border: 0; border-top: 6px solid #fff9ea; border-left: 5px solid transparent; border-right: 5px solid transparent; }
 .collected-entry { padding: 18px 6px; border-bottom: 1px solid #f1f3f7; }
 .collected-entry .memory-entry { width: 30px; height: 30px; border: 1px solid #b5d6e14d; border-radius: 50%; background: #87b6ce19; font-size: 19px; }

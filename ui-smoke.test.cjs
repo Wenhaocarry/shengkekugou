@@ -58,7 +58,17 @@ async function main() {
     };
     const snapshot = name => page.screenshot({ path: path.join(previews, name + '.png') });
     const state = async () => browserMode ? page.evaluate(() => fetch('/api/state').then(r=>r.json())) : (await page.request.get(base + '/api/state')).json();
-    const layout = async () => assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'horizontal page overflow');
+    const layout = async () => {
+      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+      const metrics=await page.evaluate(()=>({width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,frame:document.querySelector('.app-canvas').getBoundingClientRect().toJSON(),mobile:document.querySelector('.mobile').getBoundingClientRect().toJSON(),dialog:document.querySelector('dialog[open]')?.getBoundingClientRect().toJSON()}));
+      const fit=Math.min(1,metrics.width/720,metrics.height/1558),frame=metrics.frame;
+      assert(metrics.scrollWidth<=metrics.width,'horizontal page overflow');
+      assert(Math.abs(frame.width-720*fit)<1&&Math.abs(frame.height-1558*fit)<1,'app lost its 720×1558 design ratio');
+      assert(Math.abs(metrics.mobile.width-frame.width)<1&&Math.abs(metrics.mobile.height-frame.height)<1,'screen escaped the design canvas');
+      assert(frame.x>=-1&&frame.y>=-1&&frame.right<=metrics.width+1&&frame.bottom<=metrics.height+1,'app outside viewport');
+      const dialog=metrics.dialog;
+      if(dialog)assert(dialog.x>=frame.x-1&&dialog.right<=frame.right+1&&dialog.y>=frame.y-1&&dialog.bottom<=frame.bottom+1,'modal outside app canvas');
+    };
     await page.goto(base);
     await page.locator('.home').waitFor();
     const initial = await state();
@@ -72,6 +82,7 @@ async function main() {
     }
     await snapshot('home');
     await click('queue');
+    await layout();
     assert.equal(await page.locator('dialog[data-kind="queue"] .queue-row').count(),initial.songs.length);
     assert.deepEqual(await page.locator('.queue-tabs button').allTextContents(),['正在播放','单曲足迹','歌单足迹']);
     const toolbarY=(await page.locator('.queue-toolbar').boundingBox()).y;
@@ -374,7 +385,7 @@ async function main() {
     const playingID=await page.evaluate(()=>sessionStorage.getItem('shengke.prd.song'));
     assert.equal(await page.locator('.collected-entry .count').innerText(),String(initial.memories.filter(m=>m.song_id===playingID).length));
     assert.equal(await page.locator('.collected-entry .memory-entry').evaluate(el=>getComputedStyle(el).borderRadius),'50%');
-    assert.equal((await page.locator('.collected-entry .memory-entry').boundingBox()).width,30);
+    assert.equal(await page.locator('.collected-entry .memory-entry').evaluate(el=>el.offsetWidth),30);
     await click('entry');
     assert.equal(await page.locator('dialog[data-kind="journal"][open]').count(),1,'collected entry lost memory access');
     await click('close');
@@ -382,8 +393,11 @@ async function main() {
     await page.locator('.memory-gateway').click();
     await page.locator('.coverflow-card[data-center=true]').waitFor();
     assert.equal(await page.locator('.coverflow-card').count(),Math.min(3,new Set(initial.memories.map(m=>m.song_id)).size),'scene must show only three cards');
-    assert.equal(await page.locator('.gallery-footer,.gallery-dock,.coverflow-caption,[data-act="gallery-play"]').count(),0,'removed controls remain');
-    assert((await page.locator('.coverflow-card img').evaluateAll(images=>images.map(image=>image.getAttribute('src')))).every(src=>/^\/memory-covers\/\d{2}\.png$/.test(src)),'gallery replaced the supplied artwork');
+    assert.equal(await page.locator('.gallery-footer,.gallery-dock,[data-act="gallery-play"]').count(),0,'removed controls remain');
+    assert((await page.locator('.coverflow-card img').evaluateAll(images=>images.map(image=>image.getAttribute('src')))).every(src=>/^\/memory-covers-v2\/\d{2}\.png$/.test(src)),'gallery replaced the supplied artwork');
+    const checkCaptions=async()=>assert(await page.locator('.coverflow-card').evaluateAll(cards=>cards.every(card=>card.querySelector('strong')?.textContent&&card.querySelector('small')?.textContent&&card.getAttribute('aria-label').includes(card.querySelector('strong').textContent))),'card titles and artists missing or stale');
+    await checkCaptions();
+    assert((await page.locator('.memory-gallery').evaluate(el=>getComputedStyle(el,'::before').backgroundImage)).includes('starfield.svg'),'starry background missing');
     const stageBox=await page.locator('.coverflow-track').boundingBox();
     const beforeDrag=await page.locator('.gallery-scene').getAttribute('data-center-id');
     await page.mouse.move(stageBox.x+stageBox.width*.5,stageBox.y+stageBox.height*.74);await page.mouse.down();
@@ -395,6 +409,7 @@ async function main() {
     for(let i=1;i<=12;i++){await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:stageBox.x+stageBox.width*.5,y:stageBox.y+stageBox.height*.3+i*20}]});await page.waitForTimeout(16);}
     await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
     await page.waitForFunction(id=>document.querySelector('.gallery-scene').dataset.centerId!==id,beforeSwipe);
+    await checkCaptions();
     await touch.detach();
     await page.locator('.coverflow-track').focus();await page.keyboard.press('Home');
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -427,10 +442,10 @@ async function main() {
     for(const tab of ['timeline','ring']){await click('review',tab);await layout();}
     await click('review','gallery');
     assert.equal(await page.locator('.memory-gallery').getAttribute('data-song-id'),chosen,'return lost selected cover');
-    for(const [width,height] of [[360,740],[390,844],[430,932],[844,390],[1280,900]]){
+    for(const [width,height] of [[360,740],[390,844],[430,932],[720,1558],[844,390],[1280,900],[1440,1800]]){
       await page.setViewportSize({width,height});await layout();
       const mobile=await page.locator('.mobile').boundingBox(),gallery=await page.locator('.memory-gallery').boundingBox();
-      assert.equal(Math.round(mobile.width),Math.min(width,430),'gallery lost phone width');
+      assert(Math.abs(mobile.width-720*Math.min(1,width/720,height/1558))<1,'gallery lost app width');
       assert(gallery.height<=height+1,'gallery overflows viewport vertically');
       await page.locator('.coverflow-card[data-center=true]').click();
       for(const selector of ['.gallery-focus','.gallery-story']){const box=await page.locator(selector).boundingBox();assert(box.x>=mobile.x-1&&box.x+box.width<=mobile.x+mobile.width+1&&box.y>=0&&box.y+box.height<=height+1,'inline memory escaped phone viewport');}

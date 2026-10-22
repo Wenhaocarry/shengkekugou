@@ -2,7 +2,7 @@
 
 本仓库发布当前 V5 源码，`master` 为发布分支，并支持 Vercel 浏览器演示版。本地记录、上传媒体、缓存与运行截图不进入 Git。首次克隆建议运行 `./start.sh -expand-playlist-demo` 生成完整示例歌单。线上部署及 Vercel 兼容性见 [部署说明](docs/部署说明.md)。
 
-V5 从已保存的 V4 独立创建。当前使用用户提供的原始 PNG，三张图片纵向 3D 层叠，上下滑动可双向循环；首屏只有图片和顶栏。点击图片后，在同一画面中展示对应歌曲的心情、文字、照片和标签。页面最多 430 像素宽，右上角可切换到日历、歌曲时间轴、声刻环。播放器菜单中保留原声刻入口。V4 已另存于 [v4-stable](https://github.com/Wenhaocarry/shengkekugou/tree/v4-stable) 分支和本地 `../shengke-v4/`。设计见 [V5 设计说明](docs/V5设计说明.md)。
+V5 从已保存的 V4 独立创建。当前 V5.2 使用用户「封面图片 2」提供的 14 张原始 PNG 和星空背景，三张图片纵向 3D 层叠，上下滑动可双向循环。每张图显示对应记录歌曲的歌名和歌手。点击图片后，在同一画面中展示心情、文字、照片和标签。整个 App 采用 720×1558 设计画布，按屏幕宽高等比缩放；右上角可切换到日历、歌曲时间轴、声刻环。播放器菜单中保留原声刻入口。V4 已另存于 [v4-stable](https://github.com/Wenhaocarry/shengkekugou/tree/v4-stable) 分支和本地 `../shengke-v4/`。设计见 [V5 设计说明](docs/V5设计说明.md)。
 
 ## Vercel 浏览器演示
 
@@ -67,7 +67,7 @@ node --test memory-labels.test.mjs
 node --input-type=module --check < web/kugou.js
 ```
 
-浏览器检查需要本机 Chrome、Node.js 和可解析的 Playwright 包；构建 `bin/shengke` 后执行 `node ui-smoke.test.cjs`（可用 `NODE_PATH` 指向现有 Playwright 包目录）。脚本检查 360 / 390 / 430 像素布局、歌单固定区域、播放进度与歌词、创建编辑删除、多图、分享、日历、时间轴、声刻环、原图下载和封面海，输出截图至 `docs/previews/`。它不改写本版或旧版的记录。
+浏览器检查需要本机 Chrome、Node.js 和可解析的 Playwright 包；构建 `bin/shengke` 后执行 `node ui-smoke.test.cjs`（可用 `NODE_PATH` 指向现有 Playwright 包目录）。脚本检查 360 / 390 / 430 / 720 像素及横屏、桌面下的画布比例和弹窗边界、歌单固定区域、播放进度与歌词、创建编辑删除、多图、分享、日历、时间轴、声刻环、原图下载和封面海，输出截图至 `docs/previews/`。它不改写本版或旧版的记录。
 
 ## 数据与接入边界
 

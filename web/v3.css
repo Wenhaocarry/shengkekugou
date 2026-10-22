@@ -32,7 +32,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .icon svg { width: 25px; height: 25px; stroke-width: 1.55; }
 .primary { background: var(--blue); min-height: 46px; border-radius: 8px; font-size: 15px; font-weight: 500; }
 .secondary { background: #edf4ff; color: #5381b0; border-radius: 8px; }
-.light-page { min-height: 100svh; background: linear-gradient(155deg, #b7d7ff 0, #d7e9ff 190px, #f3f9ff 430px, #fff 620px); color: var(--ink); }
+.light-page { min-height: calc(var(--app-unit-y) * 100); background: linear-gradient(155deg, #b7d7ff 0, #d7e9ff 190px, #f3f9ff 430px, #fff 620px); color: var(--ink); }
 .home-header, .mine-header { display: flex; align-items: center; justify-content: space-between; padding: 2px 17px 6px; gap: 10px; }
 .home-channels { display: flex; justify-content: space-between; align-items: center; flex: 1; padding-right: 3px; gap: 11px; }
 .home-channels > button { font-size: 18px; white-space: nowrap; position: relative; padding: 2px 0 9px; }
@@ -63,7 +63,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .memory-link svg { width: 12px; height: 15px; stroke: #91a2b5; fill: none; stroke-width: 1.5; }
 .recommendations { display: flex; gap: 9px; margin: 0 -17px 27px 0; padding: 0 17px 3px 0; overflow-x: auto; scrollbar-width: none; }
 .recommendations::-webkit-scrollbar, .recent-grid::-webkit-scrollbar { display: none; }
-.recommend-card { display: flex; flex-direction: column; align-items: flex-start; flex: 0 0 36.5%; height: clamp(148px,41vw,177px); position: relative; overflow: hidden; text-align: left; color: white; border-radius: 5px; padding: 11px; isolation: isolate; }
+.recommend-card { display: flex; flex-direction: column; align-items: flex-start; flex: 0 0 36.5%; height: clamp(148px,calc(var(--app-unit-x) * 41),177px); position: relative; overflow: hidden; text-align: left; color: white; border-radius: 5px; padding: 11px; isolation: isolate; }
 .recommend-card.warm { background: linear-gradient(135deg,#b67f6b,#ddc7bc); }
 .recommend-card.blue { background: linear-gradient(135deg,#3d80c1,#8ac3e8); }
 .recommend-card h2 { font-size: 18px; font-weight: 650; white-space: nowrap; }
@@ -193,7 +193,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .my-playlist small { font-size: 10px; display: block; color: #99a3ae; margin-top: 6px; }
 .my-playlist > svg { color: #a2afbc; }
 /* The four player pages share one continuous blue background and controls. */
-.player { height: 100svh; min-height: 640px; color: #fff; background: #0b2b45; }
+.player { height: calc(var(--app-unit-y) * 100); min-height: 640px; color: #fff; background: #0b2b45; }
 .player-art { inset: 0; background-size: auto 72%; background-position: center 12%; background-repeat: no-repeat; background-color: #0c3a55; transition: opacity .2s; }
 .player-art::before { inset: 0; background-size: cover; filter: blur(35px); opacity: .5; }
 .player::after { background: linear-gradient(#082d4870, #103c5510 24%, #0b344c19 42%, #103645d9 63%, #102d3df7 90%); }
@@ -421,7 +421,7 @@ dialog[data-kind=photo-viewer], dialog[data-kind=photo-viewer] #sheet-head { bac
 .row-choice { border-color: #edf2f9; }
 .text-field, .note-box, .song-search-field { background-color: #f4f8fe; }
 /* Current queue: fixed tabs and toolbar, with only the songs scrolling. */
-dialog[data-kind=queue] { height: 70svh; max-height: 760px; min-height: 390px; border-radius: 14px 14px 0 0; background: #fff; }
+dialog[data-kind=queue] { height: calc(var(--app-unit-y) * 70); max-height: 760px; min-height: 390px; border-radius: 14px 14px 0 0; background: #fff; }
 dialog[data-kind=queue]::backdrop { background: #10213870; backdrop-filter: none; }
 dialog[data-kind=queue] #sheet-head { display: none; }
 dialog[data-kind=queue] #sheet-body { display: flex; flex-direction: column; flex: 1; overflow: hidden; padding: 0; }
@@ -477,11 +477,11 @@ dialog[data-kind=queue] #sheet-body { display: flex; flex-direction: column; fle
 .queue-playlist > svg { width: 16px; height: 16px; stroke: #a9b5c3; fill: none; stroke-width: 1.5; }
 @keyframes queue-beat { from { transform: scaleY(.45); } to { transform: scaleY(1); } }
 #toast { background: #16344cf2; border-radius: 7px; bottom: 112px; box-shadow: 0 4px 20px #06203a1a; }
-@media (min-width:600px) {
+@container appui (min-width:600px) {
   body { background: radial-gradient(ellipse at 50% 20%,#f4f9ff,#dce8f4); }
   .mobile { box-shadow: 0 0 55px #1a42691c; }
 }
-@media (max-width:374px) {
+@container appui (max-width:374px) {
   .home-channels { gap: 11px; }
   .home-channels > button { font-size: 18px; }
   .home-channels .selected { font-size: 21px; }
@@ -495,7 +495,7 @@ dialog[data-kind=queue] #sheet-body { display: flex; flex-direction: column; fle
   .mini-dock .song-inline { gap: 8px; }
   .mini-dock .icon { width: 25px; }
 }
-@media (max-height:740px) {
+@container appui (max-height:740px) {
   .player { min-height: 590px; }
   .player .status { height: 40px; padding-top: 9px; }
   .player .top { height: 46px; }

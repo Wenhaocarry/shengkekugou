@@ -1,0 +1,15 @@
+/* The existing interface uses a 360 × 779 logical grid, rendered at 2×. */
+:root { --app-unit-x: 3.6px; --app-unit-y: 7.79px; --safe: 0px; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body, body.gallery-open { background: #e4edf6; }
+.app-canvas { position: fixed; top: var(--canvas-top,0px); left: 50%; width: 720px; height: 1558px; overflow: hidden; transform: translateX(-50%) scale(var(--canvas-fit,1)); transform-origin: top center; box-shadow: 0 0 45px #15355212; }
+.app-ui { position: absolute; inset: 0 auto auto 0; width: 360px; height: 779px; transform: scale(2); transform-origin: top left; container: appui / size; }
+.mobile, body.gallery-open .mobile { width: 360px; max-width: 360px; height: 779px; min-height: 779px; margin: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.mobile::-webkit-scrollbar { display: none; }
+/* Modal dialogs live in the browser's top layer, outside ancestor transforms. */
+dialog#sheet { inset: auto auto var(--canvas-top,0px) 50%; width: 360px; max-width: 360px; max-height: calc(779px * .92); margin: 0; transform: translateX(-50%) scale(var(--ui-scale,2)); transform-origin: bottom center; }
+dialog#sheet[data-kind=photo-viewer] { height: 779px; max-height: 779px; }
+dialog#sheet::backdrop { clip-path: inset(var(--canvas-top,0px) var(--canvas-left,0px)); }
+dialog#sheet[open] { animation: app-sheet-rise .2s ease; }
+@keyframes app-sheet-rise { from { opacity: 0; transform: translateX(-50%) scale(var(--ui-scale,2)) translateY(18px); } to { opacity: 1; transform: translateX(-50%) scale(var(--ui-scale,2)) translateY(0); } }
+@media (prefers-reduced-motion:reduce) { dialog#sheet[open] { animation: none; } }
