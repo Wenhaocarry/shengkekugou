@@ -2,7 +2,7 @@
 
 本仓库发布当前 V5 源码，`master` 为发布分支，并支持 Vercel 浏览器演示版。本地记录、上传媒体、缓存与运行截图不进入 Git。首次克隆建议运行 `./start.sh -expand-playlist-demo` 生成完整示例歌单。线上部署及 Vercel 兼容性见 [部署说明](docs/部署说明.md)。
 
-V5 从已保存的 V4 独立创建。我的声刻使用手机比例的三列封面墙，左右滑动时有轻微透视和视差；首屏只显示图片和顶栏。点击任意图片，它会从原位置放大，随后在同一画面中展示对应歌曲的心情、文字、照片和标签。页面最多 430 像素宽，右上角可切换到日历、歌曲时间轴、声刻环。播放器菜单中保留原声刻入口。V4 已另存于 [v4-stable](https://github.com/Wenhaocarry/shengkekugou/tree/v4-stable) 分支和本地 `../shengke-v4/`。设计见 [V5 设计说明](docs/V5设计说明.md)。
+V5 从已保存的 V4 独立创建。当前使用用户提供的原始 PNG，三张图片纵向 3D 层叠，上下滑动可双向循环；首屏只有图片和顶栏。点击图片后，在同一画面中展示对应歌曲的心情、文字、照片和标签。页面最多 430 像素宽，右上角可切换到日历、歌曲时间轴、声刻环。播放器菜单中保留原声刻入口。V4 已另存于 [v4-stable](https://github.com/Wenhaocarry/shengkekugou/tree/v4-stable) 分支和本地 `../shengke-v4/`。设计见 [V5 设计说明](docs/V5设计说明.md)。
 
 ## Vercel 浏览器演示
 
@@ -46,7 +46,7 @@ V5 从已保存的 V4 独立创建。我的声刻使用手机比例的三列封�
 web/kugou.js             页面和交互，保留 V2 记录与分享逻辑
 web/v5.css               V5 封面墙、透视滑动与同屏记忆动效
 web/v4.css               V4 播放器菜单入口与个人页素材
-web/memory-covers/       13 张网页封面素材
+web/memory-covers/       用户原图与来源校验表；旧版 WebP 保留兼容
 web/v3.css               沿用 V3 布局与统一视觉
 web/kugou.css / v2.css    沿用的基础组件与弹窗结构
 web/v2-icons.js          心情和场景图标
