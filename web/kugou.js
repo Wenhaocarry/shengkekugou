@@ -65,8 +65,8 @@ const memories = id => newest(state.memories.filter(m=>m.song_id===id));
 const byMemory = id => state.memories.find(m=>m.id===id);
 const photos = m => m.photo_urls?.length ? m.photo_urls : m.photo_url ? [m.photo_url] : [];
 const filteredMemories = ms => photoOnly ? ms.filter(m=>photos(m).length) : ms;
-// Reference artwork and titles identify the product mockup; demo audio stays explicitly labeled.
-function track(s){if(!s)return {title:'选择歌曲',artist:'',cover:'/prd-player.jpg'};const legacy={'demo-a':['我讨厌坏天气','Piggy','/prd-player.jpg'],'demo-b':['孤独的总和','吴汶芳','/prd-rain.jpg'],'demo-c':['日落与海','陈听雨','/prd-sunset.jpg']}[s.id];if(s.sample&&legacy)return {...s,title:legacy[0],artist:legacy[1],cover:legacy[2]};return {...s,cover:s.cover_url||'/prd-rain.jpg'};}
+// Every song surface shares the supplied artwork; demo audio stays explicitly labeled.
+function track(s){const cover=galleryArt(s);if(!s)return {title:'选择歌曲',artist:'',cover};const legacy={'demo-a':['我讨厌坏天气','Piggy'],'demo-b':['孤独的总和','吴汶芳'],'demo-c':['日落与海','陈听雨']}[s.id];if(s.sample&&legacy)return {...s,title:legacy[0],artist:legacy[1],cover};return {...s,cover};}
 function songInline(s,play=false){const t=track(s);return `<div class="song-inline"><img class="thumb" src="${esc(t.cover)}" alt="${esc(t.title)}封面"><div class="info"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></div>${play?ib('play','play-song','播放歌曲',s.id,'play-round'):''}</div>`;}
 async function api(path,method='GET',body){const r=await fetch(path,{method,headers:body instanceof FormData?{}:body?{'Content-Type':'application/json'}:{},body:body instanceof FormData?body:body?JSON.stringify(body):undefined});const data=await r.json();if(!r.ok)throw Error(data.error||'操作失败，请稍后再试');return data;}
 async function refresh(){const known=new Set(state.songs.map(s=>s.id));state=await api('/api/state');state.memories=state.memories.map(m=>({...m,scenes:m.scenes||[],photo_urls:m.photo_urls||[],visibility:m.visibility||'private'}));queueIDs=queueIDs===null?state.songs.map(s=>s.id):[...queueIDs.filter(id=>bySong(id)),...state.songs.filter(s=>!known.has(s.id)).map(s=>s.id)];}

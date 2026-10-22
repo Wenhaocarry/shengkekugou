@@ -73,6 +73,7 @@ async function main() {
     await page.locator('.home').waitFor();
     const initial = await state();
     await layout();
+    assert(await page.locator('.home img').evaluateAll(images=>images.every(image=>/^\/memory-covers-v2\/\d{2}\.png$/.test(image.getAttribute('src')))),'home still uses old cover artwork');
     assert.deepEqual((await page.locator('.app-tabs button').allTextContents()).map(s=>s.replace('K','').trim()), ['首页','直播','会员','福利','我的']);
     const homeURL=page.url();
     for(const index of [1,2,3]){
@@ -146,6 +147,8 @@ async function main() {
     await page.goto(base + '/#player');
     await page.locator('.player').waitFor();
     await page.waitForFunction(() => document.querySelector('audio').readyState > 0);
+    const playerCover=await page.locator('.player-art').evaluate(el=>getComputedStyle(el).backgroundImage);
+    assert.match(playerCover,/\/memory-covers-v2\/\d{2}\.png/,'player still uses old artwork');
     await snapshot('player');
     await click('toggle');
     await page.waitForFunction(() => !document.querySelector('audio').paused);
@@ -153,6 +156,7 @@ async function main() {
     await page.locator('#seek').evaluate(el => { el.value = '16'; el.dispatchEvent(new Event('input', { bubbles: true })); });
     await page.waitForFunction(() => document.querySelector('#current-time').textContent === '00:16');
     await click('player-panel', 'lyrics');
+    assert.equal(await page.locator('.player-art').evaluate(el=>getComputedStyle(el).backgroundImage),playerCover,'lyrics artwork differs from the player cover');
     assert.equal(await page.locator('.lyric-line.is-current').getAttribute('data-id'), '16', 'lyric highlighting');
     await page.locator('.lyric-line').last().click();
     await page.waitForFunction(() => Math.abs(document.querySelector('audio').currentTime - 32) < 1);
