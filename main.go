@@ -19,7 +19,7 @@ import (
 var webFiles embed.FS
 
 func main() {
-	addr := flag.String("addr", "127.0.0.1:8100", "HTTP listen address")
+	addr := flag.String("addr", "127.0.0.1:8101", "HTTP listen address")
 	data := flag.String("data", "data", "persistent data directory")
 	seed := flag.Bool("seed", true, "add clearly labeled sample songs on first launch")
 	expandDemo := flag.Bool("expand-playlist-demo", false, "add the PDF playlist examples without replacing existing data")
