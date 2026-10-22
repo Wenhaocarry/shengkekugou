@@ -47,7 +47,7 @@ const emoji = m => MOODS.find(x=>x[1]===m)?.[0] || ({'出发':'🎧','小确幸'
 const privacy = v => ({private:'仅自己可见',friends:'好友可见',public:'公开'})[v] || '仅自己可见';
 let state={songs:[],memories:[],settings:{},events:[]}, view='home', currentID='', playerPanel='cover', review='gallery', month=localDate().slice(0,7), day=localDate(), period='month';
 let draft=null, draftPanel='', expanded=false, sheetReturn=null, selectedMemory='', historyID='', shareID='', shareType='card', shareURL='';
-let galleryID='', galleryFrame=0, galleryItems=[], galleryStoryOpen=false;
+let galleryID='', galleryFrame=0, galleryItems=[], galleryStoryOpen=false, galleryPosition=0;
 let photoReturn=null, photoOnly=false, detailReturn='memories', detailScroll=0, historyReturn='favorites', historyScroll=0;
 let pendingSeek=null, shouldPlay=false, completed=0, seeks=0, lastSeek=0, toastTimer, successTimer, nudgeTimer, saving=false;
 const liked=new Set();
@@ -199,46 +199,38 @@ function galleryStory(song){
   const ms=memories(song.id),t=track(song);
   return `<div class="story-handle" aria-hidden="true"></div><header class="story-head"><span><small>${esc(t.artist)} · ${ms.length} 段记忆</small><h2>${esc(t.title)}</h2></span>${ib('close','gallery-close','收起记忆')}</header><div class="story-scroll">${ms.map(m=>`<article class="story-memory" data-memory-id="${esc(m.id)}"><div class="story-meta"><time datetime="${esc(m.date)}T${esc(memoryTime(m))}">${esc(m.date.replaceAll('-','.'))} · ${esc(memoryTime(m))}</time>${m.mood?`<span class="story-mood">${toneIcon(m.mood)} ${esc(m.mood)}</span>`:''}</div><p>${esc(m.note||'这一刻，旋律记得。')}</p>${photoHTML(m)}${m.scenes.length||m.location?`<div class="story-tags">${m.scenes.map(x=>`<span>${esc(x)}</span>`).join('')}${m.location?`<span>📍 ${esc(m.location)}</span>`:''}</div>`:''}<button class="story-edit" data-act="edit" data-id="${esc(m.id)}">编辑这段记忆 ${svg('chevron')}</button></article>`).join('')}<button class="story-add" data-act="compose" data-id="${esc(song.id)}">＋ 再记一笔</button></div>`;
 }
-function galleryMosaic(song,index){
-  const offsets=[-3,-2,-1,2,0,3,1,4];
-  return `<span class="mosaic-wall" aria-hidden="true">${offsets.map((offset,tile)=>{const neighbor=galleryItems[(index+offset+galleryItems.length)%galleryItems.length]||song;return `<span class="mosaic-tile mosaic-tile-${tile+1}"><img src="${esc(galleryArt(neighbor))}" alt="" draggable="false"></span>`;}).join('')}</span>`;
-}
 function memoryGalleryPage(){
   galleryItems=gallerySongs();
-  if(!galleryItems.some(s=>s.id===galleryID))galleryID=galleryItems[Math.floor(galleryItems.length/2)]?.id||'';
-  const active=bySong(galleryID),t=track(current());
-  return `<section class="memory-gallery ${galleryStoryOpen?'story-open':''}"><div class="gallery-backdrop" aria-hidden="true"><img src="${esc(galleryArt(active))}" alt=""></div>${status()}
+  if(!galleryItems.some(s=>s.id===galleryID))galleryID=galleryItems[0]?.id||'';
+  const active=bySong(galleryID),columns=[];
+  galleryItems.forEach((song,i)=>(columns[Math.floor(i/3)]??=[]).push(song));
+  return `<section class="memory-gallery ${galleryStoryOpen?'story-open':''}" data-song-id="${esc(galleryID)}">${status()}
     <header class="gallery-top">${ib('back','nav','返回我的','mine')}<span>声刻记忆</span><button class="icon gallery-switch" data-act="gallery-mode" aria-label="切换到日历、歌曲时间轴和声刻环" title="切换到回顾视图"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v16H3zM3 10h18M9 4v16M14 14h4M14 17h4"/></svg></button></header>
-    ${galleryItems.length?`<div class="coverflow-track" role="region" aria-label="歌曲记忆封面墙，左右滑动或按方向键切换" aria-roledescription="轮播" tabindex="0">${galleryItems.map((s,i)=>{const ms=memories(s.id);return `<div class="coverflow-item"><button class="coverflow-card" data-act="gallery-select" data-id="${esc(s.id)}" aria-label="选择${esc(track(s).title)}的记忆封面">${galleryMosaic(s,i)}<span class="coverflow-shade"></span><span class="coverflow-caption"><small>${esc(ms[0]?.date.replaceAll('-','.')||'')}</small><b>${esc(track(s).title)}</b><em>${ms.length} 段记忆</em></span></button></div>`;}).join('')}</div>
-    <div class="gallery-footer"><div class="gallery-selection" aria-live="polite" aria-atomic="true"></div><div class="gallery-nav">${ib('back','gallery-step','上一张记忆封面','-1')}<span class="gallery-counter"></span><button class="icon gallery-next" data-act="gallery-step" data-id="1" aria-label="下一张记忆封面">${svg('chevron')}</button></div><div class="gallery-actions"><button class="gallery-open" data-act="gallery-open" data-id="${esc(active.id)}">翻开这首歌的记忆 ${svg('chevron')}</button><button class="gallery-listen" data-act="gallery-play" data-id="${esc(active.id)}" aria-label="播放选中的歌曲">${svg('play')}</button></div><p class="gallery-hint">滑动封面，轻触展开回忆</p></div>`:`<div class="gallery-empty"><div class="empty-cover-fan" aria-hidden="true">${[1,2,6].map(n=>`<img src="/memory-covers/${String(n).padStart(2,'0')}.webp" alt="">`).join('')}</div><h2>第一段回忆，从这首歌开始。</h2><p>写下一句话，让喜欢的旋律记住今天。</p><button class="gallery-open" data-act="compose">留下第一段声刻 ${svg('plus')}</button></div>`}
-    ${current()?`<div class="gallery-dock"><button class="gallery-dock-song" data-act="open-player" data-id="${esc(currentID)}"><img src="${esc(t.cover)}" alt=""><span><small class="gallery-now-label">${audio.paused?'上次聆听':'正在播放'}</small><b>${esc(t.title)}</b></span></button>${ib(audio.paused?'play':'pause','toggle','播放或暂停')}</div>`:''}
+    ${galleryItems.length?`<div class="coverflow-track" role="region" aria-label="歌曲记忆封面墙，左右滑动，轻触任意封面查看记录" tabindex="0">${columns.map(songs=>`<div class="coverflow-item ${songs.length===3?'three-tiles':''}" style="--tile-count:${songs.length}">${songs.map(s=>`<button class="coverflow-card ${galleryStoryOpen&&s.id===galleryID?'is-selected':''}" data-act="gallery-select" data-id="${esc(s.id)}" aria-label="查看${esc(track(s).title)}的${memories(s.id).length}段记忆"><img src="${esc(galleryArt(s))}" alt="" draggable="false"></button>`).join('')}</div>`).join('')}</div>`:`<div class="gallery-empty"><div class="empty-cover-fan" aria-hidden="true">${[1,2,6].map(n=>`<img src="/memory-covers/${String(n).padStart(2,'0')}.webp" alt="">`).join('')}</div><h2>第一段回忆，从这首歌开始。</h2><p>写下一句话，让喜欢的旋律记住今天。</p><button class="gallery-create" data-act="compose">留下第一段声刻 ${svg('plus')}</button></div>`}
+    <div class="gallery-focus" aria-hidden="true"><img src="${esc(galleryArt(active))}" alt=""></div>
     <section class="gallery-story" aria-label="歌曲记忆详情" aria-hidden="${galleryStoryOpen?'false':'true'}" ${galleryStoryOpen?'':'inert'}>${active?galleryStory(active):''}</section>
   </section>`;
 }
 function paintGallery(){
   galleryFrame=0;const stage=$('.coverflow-track');if(!stage||!galleryItems.length)return;
-  const step=stage.firstElementChild.getBoundingClientRect().width,position=stage.scrollLeft/step,index=Math.max(0,Math.min(galleryItems.length-1,Math.round(position))),song=galleryItems[index];
-  galleryID=song.id;
-  [...stage.children].forEach((item,i)=>{const offset=i-position,button=item.firstElementChild;item.style.setProperty('--offset',String(Math.max(-1.5,Math.min(1.5,offset))));button.classList.toggle('is-selected',i===index);button.setAttribute('aria-pressed',String(i===index));button.tabIndex=i===index?0:-1;button.setAttribute('aria-label',`${i===index?'打开':'选择'}${track(galleryItems[i]).title}的记忆`);});
-  const detail=$('.gallery-selection');
-  if(detail.dataset.songId!==song.id){const ms=memories(song.id),t=track(song);detail.dataset.songId=song.id;detail.innerHTML=`<h2>${esc(t.title)}</h2><p>${esc(t.artist)} <span>${ms.length} 段记忆</span></p>`;$('.gallery-open').dataset.id=song.id;$('.gallery-listen').dataset.id=song.id;$('.gallery-counter').textContent=`${String(index+1).padStart(2,'0')} / ${String(galleryItems.length).padStart(2,'0')}`;$('.gallery-backdrop img').src=galleryArt(song);$('.gallery-story').innerHTML=galleryStory(song);updatePlay();}
+  galleryPosition=stage.scrollLeft/galleryColumnStep(stage);
+  [...stage.children].forEach((item,i)=>{const offset=(item.offsetLeft-stage.scrollLeft+item.offsetWidth/2-stage.clientWidth/2)/item.offsetWidth;item.style.setProperty('--lean',`${Math.max(-5,Math.min(5,-offset*3))}deg`);item.style.setProperty('--shift',`${Math.max(-6,Math.min(6,offset*(i%2?-4:4)))}px`);});
 }
+function galleryColumnStep(stage){return stage.firstElementChild.offsetWidth+parseFloat(getComputedStyle(stage).columnGap);}
 function mountGallery(){
   const stage=$('.coverflow-track');if(!stage)return;
-  stage.scrollLeft=Math.max(0,galleryItems.findIndex(s=>s.id===galleryID))*stage.firstElementChild.getBoundingClientRect().width;
+  stage.scrollLeft=galleryPosition*galleryColumnStep(stage);
   stage.onscroll=()=>{if(!galleryFrame)galleryFrame=requestAnimationFrame(paintGallery);};
-  stage.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();if(e.key==='Home'||e.key==='End')scrollGallery(galleryItems[e.key==='Home'?0:galleryItems.length-1].id);else stepGallery(e.key==='ArrowLeft'?-1:1);}};
+  stage.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();stage.scrollTo({left:e.key==='Home'?0:e.key==='End'?stage.scrollWidth:stage.scrollLeft+(e.key==='ArrowLeft'?-1:1)*galleryColumnStep(stage),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}};
   let drag=null,suppressClick=false;
   stage.onpointerdown=e=>{suppressClick=false;if(e.pointerType!=='mouse'||e.button!==0)return;drag={x:e.clientX,left:stage.scrollLeft,id:e.pointerId,moved:false};};
   stage.onpointermove=e=>{if(!drag)return;if(!e.buttons){finishDrag();return;}const delta=e.clientX-drag.x;if(Math.abs(delta)>5&&!drag.moved){drag.moved=true;stage.setPointerCapture(drag.id);stage.style.scrollSnapType='none';stage.classList.add('is-dragging');}if(drag.moved){e.preventDefault();stage.scrollLeft=drag.left-delta;}};
-  const finishDrag=()=>{if(!drag)return;const moved=drag.moved;drag=null;stage.style.scrollSnapType='';stage.classList.remove('is-dragging');if(moved){suppressClick=true;paintGallery();scrollGallery(galleryID);}};
+  const finishDrag=()=>{if(!drag)return;const moved=drag.moved;drag=null;stage.style.scrollSnapType='';stage.classList.remove('is-dragging');if(moved){suppressClick=true;paintGallery();}};
   stage.onpointerup=finishDrag;stage.onpointercancel=finishDrag;
   stage.addEventListener('click',e=>{if(suppressClick){suppressClick=false;e.preventDefault();e.stopPropagation();}},true);
   paintGallery();
 }
-function scrollGallery(id){const stage=$('.coverflow-track'),index=galleryItems.findIndex(s=>s.id===id);if(!stage||index<0)return;stage.scrollTo({left:index*stage.firstElementChild.getBoundingClientRect().width,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
-function stepGallery(step){const index=galleryItems.findIndex(s=>s.id===galleryID);if(galleryItems.length)scrollGallery(galleryItems[(index+step+galleryItems.length)%galleryItems.length].id);}
-function openGalleryStory(id){const song=bySong(id);if(!song)return;galleryStoryOpen=true;const stage=$('.memory-gallery'),panel=$('.gallery-story');stage.classList.add('story-open');panel.innerHTML=galleryStory(song);panel.inert=false;panel.setAttribute('aria-hidden','false');panel.querySelector('[data-act="gallery-close"]')?.focus({preventScroll:true});}
+function openGalleryStory(id,source){const song=bySong(id);if(!song)return;galleryID=id;galleryStoryOpen=true;const stage=$('.memory-gallery'),panel=$('.gallery-story'),focus=$('.gallery-focus'),image=focus.querySelector('img');source=source||$$('.coverflow-card').find(b=>b.dataset.id===id);$$('.coverflow-card').forEach(b=>b.classList.toggle('is-selected',b===source));stage.dataset.songId=id;focus.classList.add('preparing');image.src=galleryArt(song);if(source){const from=source.getBoundingClientRect(),to=focus.getBoundingClientRect();focus.style.setProperty('--from-x',`${from.left-to.left}px`);focus.style.setProperty('--from-y',`${from.top-to.top}px`);focus.style.setProperty('--from-w',`${from.width}px`);focus.style.setProperty('--from-h',`${from.height}px`);}image.getBoundingClientRect();focus.classList.remove('preparing');stage.classList.add('story-open');panel.innerHTML=galleryStory(song);panel.inert=false;panel.setAttribute('aria-hidden','false');panel.querySelector('[data-act="gallery-close"]')?.focus({preventScroll:true});}
 function closeGalleryStory(){galleryStoryOpen=false;$('.memory-gallery')?.classList.remove('story-open');const panel=$('.gallery-story');if(panel){panel.inert=true;panel.setAttribute('aria-hidden','true');}$('.coverflow-card.is-selected')?.focus({preventScroll:true});}
 function memoriesPage(){
   if(review==='gallery')return memoryGalleryPage();
@@ -381,11 +373,8 @@ function upload(){openSheet('添加本地歌曲',`<form id="upload" class="uploa
 const actions={
  nav:nav,close:closeSheet,
  'gallery-mode':()=>{galleryStoryOpen=false;review='calendar';render();},
- 'gallery-select':id=>{if(galleryID===id)openGalleryStory(id);else scrollGallery(id);},
- 'gallery-step':id=>stepGallery(Number(id)),
- 'gallery-open':openGalleryStory,
+ 'gallery-select':openGalleryStory,
  'gallery-close':closeGalleryStory,
- 'gallery-play':async id=>{if(currentID===id){if(audio.paused)await audio.play();else audio.pause();}else{selectSong(id,true);render();}},
  'player-panel':id=>{if(!['cover','lyrics','story','related'].includes(id))return;playerPanel=id;render();},
  'download-song':()=>{const s=current();if(!s)return;const a=document.createElement('a');a.href=s.audio_url;a.download=track(s).title;a.click();},
  entry:()=>memories(currentID).length?openHistory():compose(),compose:id=>compose(id||currentID),edit:id=>compose('',byMemory(id)),
@@ -424,7 +413,8 @@ const actions={
 function step(n){const ids=queueIDs||[],i=ids.indexOf(currentID);if(ids.length){selectSong(ids[(i+n+ids.length)%ids.length],true);if(view==='memories'&&review==='gallery')render();}}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const fn=actions[b.dataset.act];if(!fn)return;try{await fn(b.dataset.id||'',b);}catch(err){if(err.name!=='AbortError')toast(err.message||'操作失败');}});
 document.addEventListener('input',e=>{if(e.target.id==='note'){$('#word-count').textContent=[...e.target.value].length+'/1000';draft.note=e.target.value;resizeNote();}if(e.target.id==='song-search')$('#song-results').innerHTML=songChoices(sheetReturn==='draft',e.target.value);if(e.target.id==='seek'){audio.currentTime=+e.target.value;updatePlay();}});
-window.addEventListener('resize',()=>{resizeNote();const stage=$('.coverflow-track');if(stage){const songs=gallerySongs(),index=songs.findIndex(s=>s.id===galleryID);stage.scrollLeft=Math.max(0,index)*stage.firstElementChild.getBoundingClientRect().width;paintGallery();}});
+window.addEventListener('resize',()=>{resizeNote();const stage=$('.coverflow-track');if(stage){stage.scrollLeft=galleryPosition*galleryColumnStep(stage);paintGallery();}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&galleryStoryOpen&&!sheet.open)closeGalleryStory();});
 document.addEventListener('change',async e=>{if(e.target.id==='seek'){const now=Date.now();seeks=now-lastSeek<60000?seeks+1:1;lastSeek=now;if(seeks>=5)hint('这一句，让你想起了什么？');}if(e.target.id==='hints'){try{state.settings=await api('/api/settings','PUT',{...state.settings,memory_hints:e.target.checked});}catch(err){e.target.checked=!e.target.checked;toast(err.message);}}if(e.target.id==='photo-files'){const list=[...e.target.files];if(list.length+draft.photo_urls.length+draft.files.length>3){$('#photo-error').textContent='最多添加 3 张图片，请重新选择';return;}if(list.some(f=>f.size>8*1024*1024||!['image/jpeg','image/png','image/webp'].includes(f.type))){$('#photo-error').textContent='请选择 8 MB 以内的 JPG、PNG 或 WebP 图片';return;}draft.files.push(...list.map(file=>({file,url:URL.createObjectURL(file)})));photoPicker();}if(e.target.id==='audio-file'&&e.target.files[0]){$('[name="title"]').value=e.target.files[0].name.replace(/\.[^.]+$/,'');}});
 document.addEventListener('submit',async e=>{if(e.target.id==='composer'){e.preventDefault();await publish();}if(e.target.id==='upload'){e.preventDefault();const f=e.target,b=$('button[type="submit"]',f);b.disabled=true;try{const file=$('#audio-file').files[0];if(file.size>52*1024*1024)throw Error('音频最大 52 MB');const duration=await new Promise((resolve,reject)=>{const a=new Audio(),url=URL.createObjectURL(file);const timer=setTimeout(()=>done(Error('读取音频超时')),15000);function done(error){clearTimeout(timer);const d=a.duration;a.removeAttribute('src');a.load();URL.revokeObjectURL(url);error?reject(error):resolve(d);}a.onloadedmetadata=()=>Number.isFinite(a.duration)&&a.duration>0?done():done(Error('无效音频时长'));a.onerror=()=>done(Error('浏览器无法解码该文件'));a.src=url;});const data=new FormData(f);data.append('file',file);data.append('duration',duration);data.append('color','#42698c');const s=await api('/api/songs','POST',data);await refresh();closeSheet();selectSong(s.id);nav('player');toast('歌曲已添加');}catch(err){$('#upload-error').textContent=err.message;}finally{b.disabled=false;}}});
 sheet.addEventListener('cancel',e=>{if(saving)e.preventDefault();else if(sheet.dataset.kind==='photo-viewer'){e.preventDefault();closePhotoViewer();}});

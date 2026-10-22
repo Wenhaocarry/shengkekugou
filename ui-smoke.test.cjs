@@ -267,10 +267,7 @@ async function main() {
     assert.equal(saved.photo_urls.length, 3, 'editing lost photos');
     await click('close');
     await page.goto(base+'/#memories');
-    const photoCoverIndex=await page.locator('.coverflow-card').evaluateAll((covers,id)=>covers.findIndex(cover=>cover.dataset.id===id),saved.song_id);
-    assert(photoCoverIndex>=0,'saved song missing from cover wall');
-    await page.locator('.coverflow-track').evaluate((stage,index)=>{stage.scrollLeft=index*stage.firstElementChild.getBoundingClientRect().width;},photoCoverIndex);
-    await page.waitForFunction(id=>document.querySelector('.gallery-selection')?.dataset.songId===id,saved.song_id);
+    await page.locator(`.coverflow-card[data-id="${saved.song_id}"]`).scrollIntoViewIfNeeded();
     await click('gallery-select',saved.song_id);
     assert.equal(await page.locator(`.gallery-story [data-memory-id="${saved.id}"] .photo-thumb`).count(),3,'inline story lost saved photos');
     await page.locator(`.gallery-story [data-act="photo-view"][data-id="${saved.id}|1"]`).click();
@@ -372,50 +369,55 @@ async function main() {
     await click('close');
     await page.goto(base+'/#mine');
     await page.locator('.memory-gateway').click();
-    await page.locator('.gallery-selection h2').waitFor();
+    await page.locator('.coverflow-card').first().waitFor();
     assert.equal(await page.locator('.coverflow-card').count(),new Set(initial.memories.map(m=>m.song_id)).size);
+    assert.equal(await page.locator('.gallery-footer,.gallery-dock,.coverflow-caption,[data-act="gallery-play"]').count(),0,'removed gallery controls remain');
     await page.evaluate(()=>Promise.all([...document.querySelectorAll('.coverflow-card img')].map(image=>image.decode())));
     const stageBox=await page.locator('.coverflow-track').boundingBox();
-    const beforeDrag=await page.locator('.gallery-selection').getAttribute('data-song-id');
+    assert((await page.locator('.coverflow-card').first().boundingBox()).width<stageBox.width*.4,'cover tiles are too wide for phone layout');
+    const beforeDrag=await page.locator('.coverflow-track').evaluate(el=>el.scrollLeft);
     await page.mouse.move(stageBox.x+stageBox.width*.8,stageBox.y+160);await page.mouse.down();
     await page.mouse.move(stageBox.x+stageBox.width*.14,stageBox.y+160,{steps:20});await page.mouse.up();
-    await page.waitForFunction(id=>document.querySelector('.gallery-selection')?.dataset.songId!==id,beforeDrag);
-    assert.equal(await page.locator('.memory-gallery').count(),1,'drag opened a record');
-    const beforeSwipe=await page.locator('.gallery-selection').getAttribute('data-song-id'),touch=await context.newCDPSession(page);
+    await page.waitForFunction(left=>document.querySelector('.coverflow-track').scrollLeft>left+10,beforeDrag);
+    assert.equal(await page.locator('.memory-gallery.story-open').count(),0,'drag opened a record');
+    const beforeSwipe=await page.locator('.coverflow-track').evaluate(el=>el.scrollLeft),touch=await context.newCDPSession(page);
     await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:stageBox.x+70,y:stageBox.y+170}]});
     for(let i=1;i<=12;i++){await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:stageBox.x+70+i*20,y:stageBox.y+170}]});await page.waitForTimeout(16);}
     await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-    await page.waitForFunction(id=>document.querySelector('.gallery-selection')?.dataset.songId!==id,beforeSwipe);
-    await page.evaluate(()=>new Promise(resolve=>{const stage=document.querySelector('.coverflow-track');let previous=stage.scrollLeft,stable=0;const timer=setInterval(()=>{stable=Math.abs(stage.scrollLeft-previous)<.5?stable+1:0;previous=stage.scrollLeft;if(stable===6){clearInterval(timer);resolve();}},50);}));
+    await page.waitForFunction(left=>document.querySelector('.coverflow-track').scrollLeft<left-10,beforeSwipe);
     await touch.detach();
-    const firstCover=await page.locator('.coverflow-card').first().getAttribute('data-id'),lastCover=await page.locator('.coverflow-card').last().getAttribute('data-id');
     await page.locator('.coverflow-track').focus();await page.keyboard.press('End');
-    await page.waitForFunction(id=>document.querySelector('.gallery-selection').dataset.songId===id,lastCover);
-    await click('gallery-step','1');
-    await page.waitForFunction(id=>document.querySelector('.gallery-selection').dataset.songId===id,firstCover);
-    await page.locator('.coverflow-track').evaluate(el=>el.scrollLeft+=el.firstElementChild.getBoundingClientRect().width);
-    await page.waitForFunction(id=>document.querySelector('.gallery-selection').dataset.songId!==id,firstCover);
-    const chosen=await page.locator('.gallery-selection').getAttribute('data-song-id');
-    assert.equal(await page.locator('.memory-gallery').count(),1,'entry must open immersive gallery');
-    const galleryURL=page.url();
-    await click('gallery-select',chosen);
+    await page.waitForFunction(()=>{const el=document.querySelector('.coverflow-track');return el.scrollLeft>=el.scrollWidth-el.clientWidth-1;});
+    await page.keyboard.press('Home');
+    await page.waitForFunction(()=>document.querySelector('.coverflow-track').scrollLeft<1);
+    const chosenCover=page.locator('.coverflow-card').nth(4),chosen=await chosenCover.getAttribute('data-id'),chosenImage=await chosenCover.locator('img').getAttribute('src');
+    const galleryURL=page.url(),savedWallPosition=await page.locator('.coverflow-track').evaluate(el=>el.scrollLeft);
+    await chosenCover.click();
     await page.locator('.memory-gallery.story-open').waitFor();
     assert.equal(page.url(),galleryURL,'opening a cover navigated away');
+    assert.equal(await page.locator('.gallery-focus img').getAttribute('src'),chosenImage,'clicked image did not become the focus image');
     assert.equal(await page.locator('.gallery-story .story-memory').count(),initial.memories.filter(m=>m.song_id===chosen).length);
     assert(await page.locator('.gallery-story .story-mood').count(),'revealed memories lost their moods');
     assert(await page.locator('.gallery-story .story-memory p').first().innerText(),'revealed memory has no note');
     await click('gallery-close');
     assert.equal(await page.locator('.memory-gallery.story-open').count(),0);
+    assert(Math.abs((await page.locator('.coverflow-track').evaluate(el=>el.scrollLeft))-savedWallPosition)<2,'closing changed wall position');
     await click('gallery-mode');
     assert.deepEqual((await page.locator('.memory-body .tabs button').allTextContents()).map(x=>x.trim()),['日历','歌曲时间轴','声刻环']);
     for(const tab of ['timeline','ring']){await click('review',tab);await layout();}
     await click('review','gallery');
-    assert.equal(await page.locator('.gallery-selection').getAttribute('data-song-id'),chosen,'return lost selected cover');
-    await click('gallery-play',chosen);await page.waitForFunction(()=>!document.querySelector('audio').paused);
-    assert.equal(await page.locator('.memory-gallery').count(),1,'playing a cover left the gallery');
-    assert.equal(await page.locator('.gallery-dock-song').getAttribute('data-id'),chosen);
-    await click('gallery-play',chosen);assert(await page.locator('audio').evaluate(el=>el.paused));
-    for(const [width,height] of [[360,844],[430,844],[844,390],[1280,900]]){await page.setViewportSize({width,height});await layout();assert.equal(Math.round((await page.locator('.mobile').boundingBox()).width),width,'gallery left black sidebars');assert.equal(await page.locator('.gallery-selection').getAttribute('data-song-id'),chosen,'resize changed selected cover');}
+    assert.equal(await page.locator('.memory-gallery').getAttribute('data-song-id'),chosen,'return lost selected cover');
+    for(const [width,height] of [[360,740],[390,844],[430,932],[844,390],[1280,900]]){
+      await page.setViewportSize({width,height});await layout();
+      const mobile=await page.locator('.mobile').boundingBox(),gallery=await page.locator('.memory-gallery').boundingBox();
+      assert.equal(Math.round(mobile.width),Math.min(width,430),'gallery lost phone width');
+      assert(gallery.height<=height+1,'gallery overflows viewport vertically');
+      assert.equal(await page.locator('.memory-gallery').getAttribute('data-song-id'),chosen,'resize changed selected cover');
+      await page.locator('.coverflow-card').nth(4).click();
+      for(const selector of ['.gallery-focus','.gallery-story']){const box=await page.locator(selector).boundingBox();assert(box.x>=mobile.x-1&&box.x+box.width<=mobile.x+mobile.width+1&&box.y>=0&&box.y+box.height<=height+1,'inline memory escaped phone viewport');}
+      await click('gallery-close');
+    }
+    await page.setViewportSize({width:390,height:844});
     await snapshot('v5-gallery');
     if(browserMode){
       assert((await page.evaluate(()=>indexedDB.databases())).some(db=>db.name==='shengke-browser-v3'),'V5 changed the existing browser database');
