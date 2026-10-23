@@ -4,14 +4,3 @@
 .player-bottom > .nudge::before { left: auto; top: auto; right: 13px; bottom: -5px; width: 0; height: 0; border: 0; border-top: 6px solid #fff9ea; border-left: 5px solid transparent; border-right: 5px solid transparent; }
 .collected-entry { padding: 18px 6px; border-bottom: 1px solid #f1f3f7; }
 .collected-entry .memory-entry { width: 30px; height: 30px; border: 1px solid #b5d6e14d; border-radius: 50%; background: #87b6ce19; font-size: 19px; }
-.memory-gateway { position: relative; isolation: isolate; display: block; width: 100%; min-height: 168px; overflow: hidden; margin-bottom: 16px; border-radius: 16px; padding: 20px; text-align: left; color: #fff; background: radial-gradient(ellipse at 70% 80%,#7264828c,transparent 60%),linear-gradient(120deg,#132038,#172238 54%,#38364a); box-shadow: 0 10px 22px #152b4820; }
-.gateway-copy { position: relative; z-index: 2; }
-.gateway-copy > small { display: block; color: #ccd9e4; font-size: 9px; letter-spacing: 1px; }
-.gateway-copy > strong { display: block; margin: 11px 0 13px; font-size: 25px; line-height: 1.25; font-weight: 550; letter-spacing: 1px; }
-.gateway-copy > span { display: flex; align-items: center; gap: 5px; color: #dfd6cb; font-size: 10px; }
-.gateway-copy > span svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; }
-.gateway-covers { position: absolute; width: 155px; height: 145px; right: 0; top: 22px; perspective: 650px; }
-.gateway-covers img { position: absolute; width: 104px; height: 104px; object-fit: cover; border-radius: 5px; box-shadow: -8px 10px 20px #0006; transform: rotateY(-28deg) rotateZ(9deg); }
-.gateway-covers img:nth-child(1) { left: -4px; top: 11px; opacity: .55; }
-.gateway-covers img:nth-child(2) { left: 27px; top: 3px; opacity: .85; }
-.gateway-covers img:nth-child(3) { left: 59px; top: 19px; }

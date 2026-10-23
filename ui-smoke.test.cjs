@@ -394,7 +394,7 @@ async function main() {
     assert.equal(await page.locator('dialog[data-kind="journal"][open]').count(),1,'collected entry lost memory access');
     await click('close');
     await page.goto(base+'/#mine');
-    await page.locator('.memory-gateway').click();
+    await page.locator('.entry-row [data-act="nav"][data-id="memories"]').click();
     await page.locator('.coverflow-card[data-center=true]').waitFor();
     assert.equal(await page.locator('.coverflow-card').count(),Math.min(3,new Set(initial.memories.map(m=>m.song_id)).size),'scene must show only three cards');
     assert.equal(await page.locator('.gallery-footer,.gallery-dock,[data-act="gallery-play"]').count(),0,'removed controls remain');
